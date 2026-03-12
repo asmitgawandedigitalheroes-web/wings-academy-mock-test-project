@@ -81,7 +81,7 @@ const Footer = () => {
 
         <div className="border-t border-white/5 pt-12 flex flex-col md:flex-row justify-between items-center text-slate-500 text-sm font-bold tracking-wide">
           <p>© {new Date().getFullYear()} Wings Academy. All rights reserved.</p>
-          <p className="mt-4 md:mt-0 flex items-center gap-2">Made with <span className="text-accent animate-pulse">✈️</span> for Aviation Professionals</p>
+          <p className="mt-4 md:mt-0 flex items-center gap-2">Privacy policy | Terms of service | Cookie policy | Disclaimer</p>
         </div>
       </div>
     </footer>
