@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { X, HelpCircle, CheckCircle2, AlertCircle, Circle, CheckSquare, Square, Plus, Trash2 } from 'lucide-react'
+import { X, HelpCircle, CheckCircle2, AlertCircle, Circle, CheckSquare, Square, Plus, Trash2, Star } from 'lucide-react'
 import { addQuestionToTest, updateQuestion } from '@/app/actions/admin'
 
 interface AddQuestionToTestModalProps {
@@ -27,6 +27,8 @@ export default function AddQuestionToTestModal({
     (initialData?.correct_option_index !== undefined && initialData?.correct_option_index !== null ? [initialData.correct_option_index] : [0])
   )
   const [explanation, setExplanation] = useState(initialData?.explanation || '')
+  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>(initialData?.difficulty_level || 'medium')
+  const [marks, setMarks] = useState<number>(initialData?.marks ?? 1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -82,7 +84,9 @@ export default function AddQuestionToTestModal({
         question_type: questionType,
         options,
         correct_options: correctOptions,
-        explanation
+        difficulty_level: difficulty,
+        explanation,
+        marks
       };
 
       let result;
@@ -109,7 +113,7 @@ export default function AddQuestionToTestModal({
   }
 
   return (
-    <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-2xl shadow-2xl animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+    <div className="bg-white rounded-[2.5rem] p-8 w-[95%] max-w-2xl shadow-2xl animate-in zoom-in duration-300 max-h-[90vh] overflow-y-auto no-scrollbar">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h2 className="text-2xl font-black text-[#0f172a] tracking-tight">{initialData ? 'Edit Test Question' : 'Add Test Question'}</h2>
@@ -165,6 +169,49 @@ export default function AddQuestionToTestModal({
             placeholder="Type the question here..."
             className="w-full p-6 bg-slate-50 border border-slate-200 rounded-3xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-bold min-h-[120px]"
           />
+        </div>
+
+        <div className="space-y-4">
+          <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Difficulty Level</label>
+          <div className="grid grid-cols-3 gap-4">
+            {['easy', 'medium', 'hard'].map((level) => (
+              <button
+                key={level}
+                type="button"
+                onClick={() => setDifficulty(level as any)}
+                className={`p-4 rounded-2xl border flex flex-col items-center justify-center gap-1 font-bold transition-all capitalize ${
+                  difficulty === level 
+                  ? 'bg-primary/5 border-primary text-primary shadow-sm' 
+                  : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-white'
+                }`}
+              >
+                <div className={`w-2 h-2 rounded-full ${
+                  level === 'easy' ? 'bg-green-500' : level === 'medium' ? 'bg-orange-500' : 'bg-red-500'
+                }`} />
+                {level}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Marks for this Question</label>
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1 group">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 p-1.5 bg-amber-100 text-amber-600 rounded-lg">
+                <Star className="w-4 h-4" />
+              </div>
+              <input
+                type="number"
+                min="0"
+                step="0.5"
+                value={marks}
+                onChange={(e) => setMarks(Math.max(0, parseFloat(e.target.value) || 0))}
+                className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-bold text-[#0f172a]"
+              />
+            </div>
+            <div className="text-xs font-bold text-slate-400 whitespace-nowrap">marks</div>
+          </div>
         </div>
 
         <div className="space-y-4">

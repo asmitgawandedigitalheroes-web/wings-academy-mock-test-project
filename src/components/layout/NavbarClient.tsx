@@ -90,7 +90,7 @@ export default function NavbarClient({ user, role }: { user: any, role?: string 
                   <Link href="/login" className="font-bold text-[#0f172a] hover:text-primary transition-colors">
                     Log in
                   </Link>
-                  <Link href="/signup" className="bg-primary text-white px-6 py-2.5 rounded-full font-bold hover:bg-[#152e75] transition-all shadow-lg shadow-primary/20">
+                  <Link href="/signup" className="bg-primary text-white px-6 py-2.5 rounded-full font-bold hover:brightness-110 transition-all shadow-lg shadow-primary/20">
                     Get Started
                   </Link>
                 </>
@@ -117,7 +117,7 @@ export default function NavbarClient({ user, role }: { user: any, role?: string 
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden glass"
+            className="md:hidden glass border-b border-primary/10"
           >
             <div className="px-4 pt-2 pb-6 space-y-1">
               {navLinks.map((link) => {
@@ -149,10 +149,10 @@ export default function NavbarClient({ user, role }: { user: any, role?: string 
                   </>
                 ) : (
                   <>
-                    <Link href="/login" className="w-full flex justify-center text-[#0f172a] hover:bg-slate-50 border border-slate-200 px-6 py-3 rounded-xl font-bold transition-colors">
+                    <Link href="/login" className="w-full flex justify-center text-primary hover:bg-slate-50 border border-slate-200 px-6 py-3 rounded-xl font-bold transition-colors">
                       Log in
                     </Link>
-                    <Link href="/signup" className="w-full flex justify-center bg-primary text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:bg-[#152e75] transition-colors">
+                    <Link href="/signup" className="w-full flex justify-center bg-primary text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:brightness-110 transition-colors">
                       Get Started
                     </Link>
                   </>

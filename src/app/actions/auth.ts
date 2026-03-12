@@ -66,3 +66,42 @@ export async function signout() {
   revalidatePath('/', 'layout')
   return redirect('/')
 }
+
+export async function resetPasswordForEmail(formData: FormData) {
+  const supabase = await createClient()
+  const email = formData.get('email') as string
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/auth/callback?next=/reset-password`,
+  })
+
+  if (error) {
+    return redirect(`/forgot-password?error=${encodeURIComponent(error.message)}`)
+  }
+
+  return redirect('/forgot-password?message=Password reset link sent to your email')
+}
+
+export async function updatePassword(formData: FormData) {
+  // Added log to force rebuild cache
+  console.log('Update password action triggered')
+  const supabase = await createClient()
+  const password = formData.get('password') as string
+  const confirmPassword = formData.get('confirm-password') as string
+
+  if (!password || password.length < 6) {
+    return redirect(`/reset-password?error=${encodeURIComponent('Password must be at least 6 characters')}`)
+  }
+
+  if (password !== confirmPassword) {
+    return redirect(`/reset-password?error=${encodeURIComponent('Passwords do not match')}`)
+  }
+
+  const { error } = await supabase.auth.updateUser({ password })
+
+  if (error) {
+    return redirect(`/reset-password?error=${encodeURIComponent(error.message)}`)
+  }
+
+  return redirect('/login?message=Password updated successfully. Please log in with your new password.')
+}

@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { X, Layers } from 'lucide-react'
 import { addSubject } from '@/app/actions/admin'
+import ConfirmationModal from '@/components/common/ConfirmationModal'
 
 interface SubjectFormProps {
   categories: { id: string, name: string }[]
@@ -14,6 +15,21 @@ export default function AddSubjectForm({ categories, onSuccess, onCancel }: Subj
   const [name, setName] = useState('')
   const [categoryId, setCategoryId] = useState('')
   const [loading, setLoading] = useState(false)
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean
+    title: string
+    message: string
+    type: 'danger' | 'info' | 'prompt'
+    confirmLabel: string
+    onConfirm: () => void
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+    confirmLabel: 'Confirm',
+    onConfirm: () => {}
+  })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -25,12 +41,24 @@ export default function AddSubjectForm({ categories, onSuccess, onCancel }: Subj
     if (result.success) {
         onSuccess()
     } else {
-        alert('Error: ' + result.error)
+      setModalConfig({
+        isOpen: true,
+        title: 'Error Creating Subject',
+        message: result.error || 'Please check your inputs and try again.',
+        type: 'danger',
+        confirmLabel: 'Close',
+        onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
+      })
     }
   }
 
   return (
     <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-2xl space-y-6 max-w-md w-full">
+      <ConfirmationModal 
+        {...modalConfig}
+        onCancel={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
+      />
+
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-black text-[#0f172a] flex items-center gap-3">
             <Layers className="w-6 h-6 text-primary" />
@@ -73,7 +101,7 @@ export default function AddSubjectForm({ categories, onSuccess, onCancel }: Subj
           <button 
             type="button"
             onClick={onCancel}
-            className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black hover:bg-slate-200 transition-all"
+            className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black hover:bg-slate-200 transition-all font-bold"
           >
             Cancel
           </button>

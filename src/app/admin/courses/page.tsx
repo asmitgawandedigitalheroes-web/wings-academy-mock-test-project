@@ -11,17 +11,23 @@ import {
   MoreVertical,
   Play,
   BookOpen,
-  ChevronRight
+  ChevronRight,
+  Settings,
+  Trash2
 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { getCourses } from '@/app/actions/admin'
+import { getCourses, deleteCourse } from '@/app/actions/admin'
 import AddCourseModal from '@/components/admin/courses/AddCourseModal'
+import ConfirmationModal from '@/components/common/ConfirmationModal'
 
 export default function CoursesManager() {
   const [courses, setCourses] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddCourse, setShowAddCourse] = useState(false)
+  const [activeMenu, setActiveMenu] = useState<string | null>(null)
+  const [courseToDelete, setCourseToDelete] = useState<any | null>(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   const fetchCourses = async () => {
     setLoading(true)
@@ -33,6 +39,26 @@ export default function CoursesManager() {
   useEffect(() => {
     fetchCourses()
   }, [])
+
+  // Close menu on click outside
+  useEffect(() => {
+    const handleClickOutside = () => setActiveMenu(null)
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [])
+
+  const handleDelete = async () => {
+    if (!courseToDelete) return
+    setDeleteLoading(true)
+    const result = await deleteCourse(courseToDelete.id)
+    if (result.success) {
+      setCourseToDelete(null)
+      fetchCourses()
+    } else {
+      alert(result.error || 'Failed to delete course')
+    }
+    setDeleteLoading(false)
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 relative">
@@ -89,9 +115,42 @@ export default function CoursesManager() {
                   <div className="p-3 bg-slate-50 rounded-2xl group-hover:scale-110 transition-transform">
                       <BookOpen className="w-6 h-6 text-primary" />
                   </div>
-                  <button className="p-2 hover:bg-slate-50 rounded-full transition-colors">
-                      <MoreVertical className="w-4 h-4 text-slate-400" />
-                  </button>
+                  <div className="relative">
+                      <button 
+                          onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              setActiveMenu(activeMenu === course.id ? null : course.id)
+                          }}
+                          className="p-2 hover:bg-slate-50 rounded-full transition-colors relative z-20"
+                      >
+                          <MoreVertical className="w-4 h-4 text-slate-400" />
+                      </button>
+
+                      {activeMenu === course.id && (
+                          <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-100 rounded-2xl shadow-xl z-30 py-2 animate-in fade-in zoom-in duration-200">
+                              <Link 
+                                  href={`/admin/courses/${course.id}`} // Or a settings page if exists
+                                  className="flex items-center gap-3 px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors"
+                              >
+                                  <Settings className="w-4 h-4" />
+                                  Manage
+                              </Link>
+                              <button 
+                                  onClick={(e) => {
+                                      e.preventDefault()
+                                      e.stopPropagation()
+                                      setCourseToDelete(course)
+                                      setActiveMenu(null)
+                                  }}
+                                  className="w-full flex items-center gap-3 px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-50 transition-colors"
+                              >
+                                  <Trash2 className="w-4 h-4" />
+                                  Delete
+                              </button>
+                          </div>
+                      )}
+                  </div>
               </div>
 
               <div className="flex-1">
@@ -121,6 +180,18 @@ export default function CoursesManager() {
           )}
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal 
+          isOpen={!!courseToDelete}
+          title={`Delete "${courseToDelete?.title}"?`}
+          message="This course and its category links will be permanently deleted. This action cannot be undone."
+          type="danger"
+          confirmLabel="Delete Course"
+          isLoading={deleteLoading}
+          onConfirm={handleDelete}
+          onCancel={() => setCourseToDelete(null)}
+      />
     </div>
   )
 }

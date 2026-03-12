@@ -2,8 +2,15 @@ import React from 'react'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { Mail, Phone, MapPin, Send } from 'lucide-react'
+import { getPlatformSettings } from '../actions/admin'
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const settings = await getPlatformSettings()
+  
+  const email = settings?.support_email || 'support@wingsacademy.com'
+  const phone = settings?.support_phone || '+1 (234) 567-890'
+  const addressLines = (settings?.office_address || 'Aviation Center Blvd\nSuite 100\nNew York, NY 10001').split('\n')
+
   return (
     <>
       <Navbar />
@@ -28,7 +35,7 @@ export default function ContactPage() {
                 <div>
                   <h3 className="text-lg font-bold text-[#0f172a] mb-1">Email Us</h3>
                   <p className="text-slate-600 mb-2">For general inquiries and support</p>
-                  <a href="mailto:support@wingsacademy.com" className="text-primary font-semibold hover:text-accent transition-colors">support@wingsacademy.com</a>
+                  <a href={`mailto:${email}`} className="text-primary font-semibold hover:text-accent transition-colors">{email}</a>
                 </div>
               </div>
               
@@ -39,7 +46,7 @@ export default function ContactPage() {
                 <div>
                   <h3 className="text-lg font-bold text-[#0f172a] mb-1">Call Us</h3>
                   <p className="text-slate-600 mb-2">Mon-Fri from 9am to 6pm</p>
-                  <a href="tel:+1234567890" className="text-primary font-semibold hover:text-accent transition-colors">+1 (234) 567-890</a>
+                  <a href={`tel:${phone.replace(/\D/g,'')}`} className="text-primary font-semibold hover:text-accent transition-colors">{phone}</a>
                 </div>
               </div>
 
@@ -49,7 +56,14 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-[#0f172a] mb-1">Our Office</h3>
-                  <p className="text-slate-600">Aviation Center Blvd<br />Suite 100<br />New York, NY 10001</p>
+                  <p className="text-slate-600">
+                    {addressLines.map((line: string, i: number) => (
+                      <React.Fragment key={i}>
+                        {line}
+                        {i < addressLines.length - 1 && <br />}
+                      </React.Fragment>
+                    ))}
+                  </p>
                 </div>
               </div>
             </div>

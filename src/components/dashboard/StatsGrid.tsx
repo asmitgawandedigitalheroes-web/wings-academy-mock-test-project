@@ -8,17 +8,29 @@ import {
   Clock 
 } from 'lucide-react'
 
-const stats = [
-  { name: 'Tests Taken', value: '24', icon: FileText, color: 'bg-blue-50 text-blue-600' },
-  { name: 'Average Score', value: '78%', icon: Target, color: 'bg-green-50 text-green-600' },
-  { name: 'Study Streak', value: '5 Days', icon: Zap, color: 'bg-amber-50 text-amber-600' },
-  { name: 'Last Session', value: '2h ago', icon: Clock, color: 'bg-purple-50 text-purple-600' },
-]
+interface StatsGridProps {
+  stats: any
+}
 
-export default function StatsGrid() {
+export default function StatsGrid({ stats }: StatsGridProps) {
+  if (stats.error) {
+    return (
+        <div className="bg-red-50 p-4 rounded-2xl border border-red-100 text-red-600 font-bold text-sm">
+            Error loading stats: {stats.error}
+        </div>
+    )
+  }
+
+  const statsItems = [
+    { name: 'Tests Taken', value: stats.testsTaken || '0', icon: FileText, color: 'bg-blue-50 text-blue-600' },
+    { name: 'Average Score', value: stats.avgScore || '0%', icon: Target, color: 'bg-green-50 text-green-600' },
+    { name: 'Study Streak', value: stats.streak || '0 Days', icon: Zap, color: 'bg-amber-50 text-amber-600' },
+    { name: 'Last Session', value: stats.lastSession || 'Never', icon: Clock, color: 'bg-purple-50 text-purple-600' },
+  ]
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      {stats.map((stat, idx) => (
+      {statsItems.map((stat, idx) => (
         <div key={idx} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-xl shadow-primary/5 group hover:scale-[1.02] transition-all cursor-default">
           <div className="flex items-center justify-between mb-4">
             <div className={`p-3 rounded-2xl ${stat.color} transition-transform group-hover:rotate-12`}>

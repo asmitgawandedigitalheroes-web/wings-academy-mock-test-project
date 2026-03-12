@@ -6,6 +6,7 @@ import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { signup } from '../actions/auth'
 import PasswordInput from '@/components/form/PasswordInput'
+import SubmitButton from '@/components/common/SubmitButton'
 
 export default async function SignupPage({
   searchParams,
@@ -116,13 +117,11 @@ export default async function SignupPage({
               </div>
 
               <div>
-                <button
-                  type="submit"
-                  className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-xl shadow-lg shadow-accent/20 text-sm font-bold text-[#0f172a] bg-accent hover:bg-[#dca500] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent transition-all"
-                >
-                  Create Account
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+                <SubmitButton 
+                  label="Create Account"
+                  loadingLabel="Creating Account..."
+                  className="w-full py-3 px-4 border border-transparent rounded-xl shadow-lg shadow-accent/20 text-sm font-bold text-[#0f172a] bg-accent hover:bg-[#dca500] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent transition-all"
+                />
 
                 <p className="mt-2 text-center text-sm text-slate-600">
                   Already have an account?{' '}

@@ -1,12 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #0f172a;
-  --primary: #1E3A8A; /* Smart minimalist Blue */
+  --background: #f8fafc;
+  --foreground: #122353;
+  --primary: #1e3a8a;
+  /* Premium Deep Blue */
   --primary-foreground: #ffffff;
-  --accent: #EAB308; /* Minimalist Gold */
-  --accent-foreground: #0f172a;
+  --accent: #D4AF37;
+  /* Classic Golden */
+  --accent-foreground: #1e3a8a;
   --muted: #f1f5f9;
   --muted-foreground: #64748b;
   --card: #ffffff;
@@ -26,7 +28,7 @@
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-border: var(--border);
-  
+
   --font-sans: 'Inter', 'Poppins', sans-serif;
 }
 
@@ -41,7 +43,7 @@ body {
   .glass {
     @apply bg-white/70 backdrop-blur-md border border-white/20;
   }
-  
+
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-[#001f3f] to-[#004a8c];
   }
@@ -49,6 +51,25 @@ body {
   .nav-link {
     @apply text-muted-foreground hover:text-primary transition-colors duration-200 font-medium;
   }
+}
+
+@utility no-scrollbar {
+  &::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* Global fallback */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }
 
 * {

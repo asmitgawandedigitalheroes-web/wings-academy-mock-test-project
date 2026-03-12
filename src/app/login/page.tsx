@@ -6,6 +6,7 @@ import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { login } from '../actions/auth'
 import PasswordInput from '@/components/form/PasswordInput'
+import SubmitButton from '@/components/common/SubmitButton'
 
 export default async function LoginPage({
   searchParams,
@@ -37,12 +38,7 @@ export default async function LoginPage({
           <h2 className="mt-6 text-center text-3xl font-extrabold text-[#0f172a]">
             Log in to your account
           </h2>
-          <p className="mt-2 text-center text-sm text-slate-600">
-            Or{' '}
-            <Link href="/signup" className="font-bold text-primary hover:text-accent transition-colors">
-              create a new free account
-            </Link>
-          </p>
+
         </div>
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md mb-20">
@@ -99,21 +95,26 @@ export default async function LoginPage({
                 </div>
 
                 <div className="text-sm">
-                  <a href="#" className="font-bold text-primary hover:text-accent transition-colors">
+                  <Link href="/forgot-password" className="font-bold text-primary hover:text-accent transition-colors">
                     Forgot your password?
-                  </a>
+                  </Link>
                 </div>
               </div>
 
               <div>
-                <button
-                  type="submit"
-                  className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-xl shadow-lg shadow-primary/20 text-sm font-bold text-white bg-primary hover:bg-[#152e75] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all"
-                >
-                  Sign in
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+                <SubmitButton 
+                  label="Sign in"
+                  loadingLabel="Signing in..."
+                  className="w-full py-3 px-4 border border-transparent rounded-xl shadow-lg shadow-primary/20 text-sm font-bold text-white bg-primary hover:bg-[#152e75] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all"
+                />
               </div>
+
+              <p className="mt-2 text-center text-sm text-slate-600">
+                Or{' '}
+                <Link href="/signup" className="font-bold text-primary hover:text-accent transition-colors">
+                  create a new free account
+                </Link>
+              </p>
             </form>
           </div>
         </div>

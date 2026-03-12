@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { X } from 'lucide-react'
 import { addQuestion } from '@/app/actions/admin'
+import ConfirmationModal from '@/components/common/ConfirmationModal'
 
 interface QuestionFormProps {
   subjects: { id: string, name: string, categories: { name: string } }[]
@@ -17,6 +18,21 @@ export default function AddQuestionForm({ subjects, onSuccess, onCancel }: Quest
   const [subjectId, setSubjectId] = useState('')
   const [explanation, setExplanation] = useState('')
   const [loading, setLoading] = useState(false)
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean
+    title: string
+    message: string
+    type: 'danger' | 'info' | 'prompt'
+    confirmLabel: string
+    onConfirm: () => void
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+    confirmLabel: 'Confirm',
+    onConfirm: () => {}
+  })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -34,12 +50,24 @@ export default function AddQuestionForm({ subjects, onSuccess, onCancel }: Quest
     if (result.success) {
       onSuccess()
     } else {
-        alert('Error: ' + result.error)
+      setModalConfig({
+        isOpen: true,
+        title: 'Error Saving Question',
+        message: result.error || 'Check your internet connection and try again.',
+        type: 'danger',
+        confirmLabel: 'Close',
+        onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
+      })
     }
   }
 
   return (
     <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-2xl space-y-6 max-w-2xl w-full">
+      <ConfirmationModal 
+        {...modalConfig}
+        onCancel={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
+      />
+
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-black text-[#0f172a]">Add New Question</h2>
         <button onClick={onCancel} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
@@ -58,7 +86,7 @@ export default function AddQuestionForm({ subjects, onSuccess, onCancel }: Quest
           >
             <option value="">Choose a subject...</option>
             {subjects.map(s => (
-              <option key={s.id} value={s.id}>{s.categories.name} - {s.name}</option>
+              <option key={s.id} value={s.id} className="capitalize">{s.name}</option>
             ))}
           </select>
         </div>

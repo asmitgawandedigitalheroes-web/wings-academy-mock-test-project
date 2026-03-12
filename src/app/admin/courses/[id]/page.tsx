@@ -15,6 +15,7 @@ import {
 import Link from 'next/link'
 import { getCourseDetails, getCourseSubjects, removeSubjectFromCourse } from '@/app/actions/admin'
 import AddSubjectToCourseModal from '@/components/admin/courses/AddSubjectToCourseModal'
+import ConfirmationModal from '@/components/common/ConfirmationModal'
 
 export default function CourseDetailPage() {
   const params = useParams()
@@ -25,6 +26,21 @@ export default function CourseDetailPage() {
   const [subjects, setSubjects] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddSubject, setShowAddSubject] = useState(false)
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean
+    title: string
+    message: string
+    type: 'danger' | 'info' | 'prompt'
+    confirmLabel: string
+    onConfirm: () => void
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+    confirmLabel: 'Confirm',
+    onConfirm: () => {}
+  })
 
   const fetchData = async () => {
     setLoading(true)
@@ -41,17 +57,32 @@ export default function CourseDetailPage() {
     fetchData()
   }, [id])
 
-  const handleRemoveSubject = async (subjectId: string) => {
-    if (confirm('Are you sure you want to remove this subject from the course?')) {
-      setLoading(true)
-      const result = await removeSubjectFromCourse(id, subjectId)
-      if (result.success) {
-        fetchData()
-      } else {
-        alert('Error: ' + result.error)
-        setLoading(false)
+  const handleRemoveSubject = (subjectId: string) => {
+    setModalConfig({
+      isOpen: true,
+      title: 'Remove Subject?',
+      message: 'Are you sure you want to remove this subject from the course? This will not delete the subject itself, only its association with this course.',
+      type: 'danger',
+      confirmLabel: 'Remove',
+      onConfirm: async () => {
+        setLoading(true)
+        const result = await removeSubjectFromCourse(id, subjectId)
+        if (result.success) {
+          setModalConfig(prev => ({ ...prev, isOpen: false }))
+          fetchData()
+        } else {
+          setModalConfig({
+            isOpen: true,
+            title: 'Error',
+            message: result.error || 'Failed to remove subject.',
+            type: 'danger',
+            confirmLabel: 'Close',
+            onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
+          })
+          setLoading(false)
+        }
       }
-    }
+    })
   }
 
   if (loading && !course) {
@@ -65,6 +96,11 @@ export default function CourseDetailPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
+      <ConfirmationModal 
+        {...modalConfig}
+        onCancel={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
+      />
+
       {/* Add Subject Modal */}
       {showAddSubject && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
@@ -103,7 +139,7 @@ export default function CourseDetailPage() {
           </div>
           <button 
             onClick={() => setShowAddSubject(true)}
-            className="bg-primary text-white px-8 py-4 rounded-2xl font-black shadow-xl shadow-primary/20 hover:bg-[#152e75] hover:scale-[1.02] transition-all flex items-center gap-3 shrink-0"
+            className="bg-primary text-white px-8 py-4 rounded-2xl font-black shadow-xl shadow-primary/20 hover:bg-[#152e75] hover:scale-[1.02] transition-all flex items-center justify-center gap-3 shrink-0"
           >
             <Plus className="w-6 h-6" />
             Add Subject
@@ -151,9 +187,6 @@ export default function CourseDetailPage() {
                 </div>
                 
                 <div className="relative z-10">
-                  <div className="flex items-center gap-2 text-[10px] font-black text-primary uppercase tracking-widest mb-1">
-                    <span>{item.subjects?.categories?.name}</span>
-                  </div>
                   <h4 className="text-xl font-black text-[#0f172a] mb-2">{item.subjects?.name}</h4>
                 </div>
 

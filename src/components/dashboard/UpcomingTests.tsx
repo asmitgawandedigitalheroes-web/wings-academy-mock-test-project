@@ -1,23 +1,22 @@
 'use client'
 
 import React from 'react'
-import { Calendar, ChevronRight, PlayCircle } from 'lucide-react'
+import { Calendar, PlayCircle } from 'lucide-react'
 
-const upcoming = [
-  { id: 1, title: 'DGCA Module 3 Mock Exam', date: 'Oct 24, 2023', duration: '90 min', difficulty: 'Hard' },
-  { id: 2, title: 'EASA Part-66 Mathematics', date: 'Tomorrow', duration: '45 min', difficulty: 'Medium' },
-]
+interface UpcomingTestsProps {
+  data: any[]
+}
 
-export default function UpcomingTests() {
+export default function UpcomingTests({ data }: UpcomingTestsProps) {
   return (
     <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-primary/5 space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-xl font-black text-[#0f172a]">Upcoming Tests</h3>
+        <h3 className="text-xl font-black text-[#0f172a]">Available Tests</h3>
         <button className="text-xs font-black text-primary uppercase tracking-widest hover:underline">View All</button>
       </div>
       
       <div className="space-y-4">
-        {upcoming.map((test) => (
+        {data.map((test) => (
           <div key={test.id} className="flex items-center justify-between p-5 bg-slate-50 border border-slate-100 rounded-2xl group hover:border-primary/20 transition-all">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-white rounded-xl shadow-sm group-hover:scale-110 transition-transform">
@@ -39,11 +38,11 @@ export default function UpcomingTests() {
         ))}
       </div>
       
-      {upcoming.length === 0 && (
+      {data.length === 0 && (
         <div className="py-10 text-center space-y-3">
           <div className="text-4xl">📚</div>
-          <p className="font-bold text-[#0f172a]">No upcoming sessions</p>
-          <p className="text-xs text-slate-400">Schedule your next test to track progress.</p>
+          <p className="font-bold text-[#0f172a]">No available tests</p>
+          <p className="text-xs text-slate-400">Wait for administrators to publish mock exams.</p>
         </div>
       )}
     </div>

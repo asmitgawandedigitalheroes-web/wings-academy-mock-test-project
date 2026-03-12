@@ -1,12 +1,64 @@
 'use client'
 
-import React from 'react'
-import { Bell, Search, User, LogOut, Menu } from 'lucide-react'
+import React, { useState, useEffect, useRef } from 'react'
+import { Search, User, LogOut, Menu, Database, FileText, ArrowRight } from 'lucide-react'
 import { signout } from '@/app/actions/auth'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import NotificationCenter from './NotificationCenter'
+import { globalSearch } from '@/app/actions/admin'
 
 export default function AdminHeader({ userEmail, onMenuClick }: { userEmail?: string, onMenuClick?: () => void }) {
   const router = useRouter()
+  const [searchQuery, setSearchQuery] = useState('')
+  const [isSearching, setIsSearching] = useState(false)
+  const [results, setResults] = useState<{users: any[], subjects: any[], tests: any[]}>({ users: [], subjects: [], tests: [] })
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  useEffect(() => {
+    const fetchResults = async () => {
+      if (!searchQuery.trim()) {
+        setResults({ users: [], subjects: [], tests: [] })
+        setIsDropdownOpen(false)
+        return
+      }
+      setIsSearching(true)
+      setIsDropdownOpen(true)
+      
+      try {
+        const res = await globalSearch(searchQuery)
+        setResults(res)
+      } catch (err) {
+        console.error('Search error:', err)
+      } finally {
+        setIsSearching(false)
+      }
+    }
+
+    const timer = setTimeout(() => {
+      fetchResults()
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && searchQuery.trim()) {
+      setIsDropdownOpen(false)
+      router.push(`/admin/search?q=${encodeURIComponent(searchQuery.trim())}`)
+    }
+  }
 
   const handleLogout = async () => {
     await signout()
@@ -22,21 +74,111 @@ export default function AdminHeader({ userEmail, onMenuClick }: { userEmail?: st
         >
           <Menu className="w-6 h-6" />
         </button>
-        <div className="hidden md:flex items-center gap-4 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 w-96">
-        <Search className="w-4 h-4 text-slate-400" />
-        <input 
-          type="text" 
-          placeholder="Search for anything..." 
-          className="bg-transparent border-none outline-none text-sm w-full font-medium"
-        />
+        <div ref={dropdownRef} className="hidden md:flex items-center gap-4 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 w-96 relative">
+          <Search className="w-4 h-4 text-slate-400" />
+          <input 
+            type="text" 
+            placeholder="Search for anything..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => { if(searchQuery.trim()) setIsDropdownOpen(true) }}
+            onKeyDown={handleSearch}
+            className="bg-transparent border-none outline-none text-sm w-full font-medium"
+          />
+
+          {/* Search Dropdown */}
+          {isDropdownOpen && (
+            <div className="absolute top-12 left-0 w-[450px] bg-white border border-slate-100 shadow-2xl rounded-2xl overflow-hidden z-50 flex flex-col max-h-[80vh]">
+              {isSearching ? (
+                <div className="p-8 flex items-center justify-center">
+                  <div className="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                </div>
+              ) : results.users.length === 0 && results.subjects.length === 0 && results.tests.length === 0 ? (
+                <div className="p-8 text-center text-slate-500 font-medium">
+                  No results found for "<span className="text-primary font-bold">{searchQuery}</span>"
+                </div>
+              ) : (
+                <div className="overflow-y-auto p-2">
+                  {results.users.length > 0 && (
+                    <div className="mb-2">
+                      <div className="px-3 py-2 text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <User className="w-3 h-3" /> Users
+                      </div>
+                      {results.users.map(user => (
+                        <Link 
+                          href={`/admin/users/${user.id}`} 
+                          key={user.id} 
+                          onClick={() => setIsDropdownOpen(false)}
+                          className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl transition-colors group"
+                        >
+                          <div>
+                            <p className="font-bold text-[#0f172a] group-hover:text-primary transition-colors">{user.full_name || 'Unnamed'}</p>
+                            <p className="text-xs text-slate-500">{user.email}</p>
+                          </div>
+                          <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+
+                  {results.subjects.length > 0 && (
+                    <div className="mb-2">
+                      <div className="px-3 py-2 text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <Database className="w-3 h-3" /> Subjects
+                      </div>
+                      {results.subjects.map(subject => (
+                        <Link 
+                          href={`/admin/subjects/${subject.id}`} 
+                          key={subject.id} 
+                          onClick={() => setIsDropdownOpen(false)}
+                          className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl transition-colors group"
+                        >
+                          <div>
+                            <p className="font-bold text-[#0f172a] group-hover:text-primary transition-colors">{subject.name}</p>
+                            <p className="text-xs text-slate-500 line-clamp-1">{subject.description || 'No description'}</p>
+                          </div>
+                          <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+
+                  {results.tests.length > 0 && (
+                    <div>
+                      <div className="px-3 py-2 text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <FileText className="w-3 h-3" /> Tests
+                      </div>
+                      {results.tests.map(test => (
+                        <Link 
+                          href={`/admin/tests/${test.id}`} 
+                          key={test.id} 
+                          onClick={() => setIsDropdownOpen(false)}
+                          className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl transition-colors group"
+                        >
+                          <div>
+                            <p className="font-bold text-[#0f172a] group-hover:text-primary transition-colors">{test.title}</p>
+                          </div>
+                          <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <button 
+                    onClick={() => { setIsDropdownOpen(false); router.push(`/admin/search?q=${encodeURIComponent(searchQuery.trim())}`); }}
+                    className="w-full text-center p-3 text-sm font-bold text-primary hover:bg-slate-50 rounded-xl mt-2 transition-colors border border-transparent hover:border-slate-100"
+                  >
+                    View all results
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       <div className="flex items-center gap-4 md:gap-6">
-        <button className="relative p-2 text-slate-400 hover:text-primary transition-colors">
-          <Bell className="w-6 h-6" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-        </button>
+        <NotificationCenter />
         
         <div className="h-8 w-[1px] bg-slate-200"></div>
 

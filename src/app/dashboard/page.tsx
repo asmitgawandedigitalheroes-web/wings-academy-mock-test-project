@@ -4,10 +4,17 @@ import WelcomeBanner from '@/components/dashboard/WelcomeBanner'
 import StatsGrid from '@/components/dashboard/StatsGrid'
 import UpcomingTests from '@/components/dashboard/UpcomingTests'
 import SubjectProgress from '@/components/dashboard/SubjectProgress'
+import { getDashboardStats, getSubjectProgress, getAvailableTests } from '@/app/actions/dashboard'
 
 export default async function StudentDashboard() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+
+  const [stats, progress, upcoming] = await Promise.all([
+    getDashboardStats(),
+    getSubjectProgress(),
+    getAvailableTests()
+  ])
 
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -15,12 +22,12 @@ export default async function StudentDashboard() {
       <WelcomeBanner name={user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Student'} />
 
       {/* Quick Stats */}
-      <StatsGrid />
+      <StatsGrid stats={stats} />
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
         <div className="xl:col-span-2 space-y-10">
-          <SubjectProgress />
+          <SubjectProgress data={progress} />
           {/* Placeholder for performance chart or detailed analytics */}
           <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-primary/5 min-h-[400px] flex items-center justify-center relative overflow-hidden group">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 opacity-50"></div>
@@ -38,7 +45,7 @@ export default async function StudentDashboard() {
         </div>
 
         <div className="xl:col-span-1">
-          <UpcomingTests />
+          <UpcomingTests data={upcoming} />
         </div>
       </div>
     </div>

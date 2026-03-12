@@ -4,54 +4,58 @@ import { ArrowRight, BookOpen } from 'lucide-react'
 
 const Hero = () => {
   return (
-    <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 bg-slate-50 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 bg-[#f8fafc] overflow-hidden">
+      {/* Background Decor */}
+      <div className="absolute top-0 right-0 w-[50%] h-[50%] bg-primary/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2"></div>
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
           
           {/* Text Content */}
-          <div className="flex-1 text-center lg:text-left z-10">
-            <div className="inline-block py-1 px-3 rounded-full bg-primary/10 text-primary font-bold text-sm mb-6 uppercase tracking-wider">
+          <div className="flex-1 text-center lg:text-left">
+            <div className="inline-block py-1.5 px-4 rounded-full bg-primary/10 text-primary font-black text-xs mb-6 uppercase tracking-[0.2em] border border-primary/5">
               Trusted by Future Engineers
             </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-[#0f172a] leading-tight mb-6">
-              Master Your Aviation Certification with <span className="text-primary">Precision Mock Tests</span>
+            <h1 className="text-4xl md:text-5xl lg:text-7xl font-black text-primary leading-[1.1] mb-6 tracking-tight">
+              Master Your Aviation Certification with <span className="text-accent">Precision</span> Mock Tests
             </h1>
-            <p className="text-lg md:text-xl text-slate-600 mb-8 max-w-2xl mx-auto lg:mx-0">
+            <p className="text-lg md:text-xl text-slate-600 mb-10 max-w-2xl mx-auto lg:mx-0 font-medium leading-relaxed">
               Practice real exam-style questions for EASA, GCAA, and DGCA certifications. Simple, mobile-friendly preparation that guarantees success.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
-              <Link href="#pricing" className="w-full sm:w-auto bg-primary text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2">
+              <Link href="/signup" className="w-full sm:w-auto bg-primary text-white px-10 py-5 rounded-2xl font-black text-lg hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-xl shadow-primary/20">
                 Start Free Tests
                 <ArrowRight className="w-5 h-5" />
               </Link>
-              <Link href="#subjects" className="w-full sm:w-auto bg-white text-[#0f172a] border border-slate-200 shadow-sm px-8 py-4 rounded-xl font-bold text-lg hover:bg-slate-50 transition-colors flex items-center justify-center gap-2">
+              <Link href="#subjects" className="w-full sm:w-auto bg-white text-primary border-2 border-slate-100 shadow-xl shadow-slate-200/50 px-10 py-5 rounded-2xl font-black text-lg hover:bg-slate-50 active:scale-95 transition-all flex items-center justify-center gap-2">
                 <BookOpen className="w-5 h-5" />
                 View Subjects
               </Link>
             </div>
           </div>
 
-          {/* Simple Image Content */}
-          <div className="flex-1 w-full max-w-2xl lg:max-w-none relative z-10">
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl aspect-[4/3] bg-slate-200">
-              <Image 
-                src="/aircraft_hero.png" 
-                alt="Commercial passenger aircraft in flight"
-                fill
-                priority
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 50vw"
-              />
-              {/* Simple overlay gradient for text legibility if needed later, but right now image stands alone */}
+          {/* Image Content */}
+          <div className="flex-1 w-full max-w-2xl lg:max-w-none relative">
+            <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl aspect-[4/3] bg-primary/5 p-2">
+              <div className="relative w-full h-full rounded-[2rem] overflow-hidden">
+                <Image 
+                  src="/aircraft_hero.png" 
+                  alt="Commercial passenger aircraft in flight"
+                  fill
+                  priority
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                />
+              </div>
             </div>
-            {/* Simple stats card overlaid */}
-            <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-xl shadow-xl border border-slate-100 flex items-center gap-4 hidden sm:flex">
-                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-bold text-xl">
+            {/* Stats card overlaid */}
+            <div className="absolute -bottom-8 -left-8 bg-white p-8 rounded-[2rem] shadow-2xl border border-slate-50 flex items-center gap-5 hidden sm:flex transform -rotate-3 hover:rotate-0 transition-transform duration-500">
+                <div className="w-14 h-14 rounded-2xl bg-accent flex items-center justify-center text-primary font-black text-xl shadow-lg shadow-accent/20">
                     98%
                 </div>
                 <div>
-                   <p className="font-bold text-[#0f172a] leading-tightSpacing">Pass Rate</p>
-                   <p className="text-sm text-slate-500">For Active Users</p>
+                   <p className="font-black text-primary leading-none text-xl tracking-tight">Pass Rate</p>
+                   <p className="text-sm font-bold text-slate-400 mt-1 uppercase tracking-widest">For Active Users</p>
                 </div>
             </div>
           </div>

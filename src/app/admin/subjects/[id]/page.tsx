@@ -10,13 +10,16 @@ import {
   ChevronRight,
   MoreVertical,
   Play,
-  Settings,
+  Settings2,
   HelpCircle,
-  BookOpen
+  BookOpen,
+  Settings,
+  DollarSign
 } from 'lucide-react'
 import Link from 'next/link'
-import { getSubjectDetails, getTestsBySubject } from '@/app/actions/admin'
+import { getSubjectDetails, getTestsBySubject, toggleSubjectStatus } from '@/app/actions/admin'
 import AddTestModal from '@/components/admin/tests/AddTestModal'
+import TestCardActions from '@/components/admin/tests/TestCardActions'
 
 export default function SubjectDetailPage() {
   const params = useParams()
@@ -27,6 +30,7 @@ export default function SubjectDetailPage() {
   const [tests, setTests] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddTest, setShowAddTest] = useState(false)
+  const [sortBy, setSortBy] = useState<'newest' | 'alphabetical'>('newest')
 
   const fetchData = async () => {
     setLoading(true)
@@ -38,6 +42,14 @@ export default function SubjectDetailPage() {
     setTests(testList)
     setLoading(false)
   }
+
+  const sortedTests = [...tests].sort((a, b) => {
+    if (sortBy === 'newest') {
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    } else {
+      return a.title.localeCompare(b.title)
+    }
+  })
 
   useEffect(() => {
     fetchData()
@@ -59,6 +71,9 @@ export default function SubjectDetailPage() {
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <AddTestModal 
             subjectId={id}
+            existingTests={tests}
+            freeLimit={subject?.free_tests_limit}
+            paidLimit={subject?.paid_tests_limit}
             onCancel={() => setShowAddTest(false)}
             onSuccess={() => {
               setShowAddTest(false)
@@ -83,20 +98,25 @@ export default function SubjectDetailPage() {
               <BookOpen className="w-8 h-8 text-primary" />
             </div>
             <div>
-              <div className="flex items-center gap-2 text-xs font-black text-primary uppercase tracking-[0.2em] mb-1">
-                <span>{subject?.categories?.name}</span>
-                <ChevronRight className="w-3 h-3 text-slate-300" />
-              </div>
-              <h1 className="text-3xl font-black text-[#0f172a] tracking-tight">{subject?.name}</h1>
+              <h1 className="text-3xl font-black text-[#0f172a] tracking-tight capitalize">{subject?.name}</h1>
             </div>
           </div>
-          <button 
-            onClick={() => setShowAddTest(true)}
-            className="bg-primary text-white px-8 py-4 rounded-2xl font-black shadow-xl shadow-primary/20 hover:bg-[#152e75] hover:scale-[1.02] transition-all flex items-center gap-3 shrink-0"
-          >
-            <Plus className="w-6 h-6" />
-            Add New Test
-          </button>
+          <div className="flex items-center gap-4">
+            <Link 
+              href={`/admin/subjects/${id}/settings`}
+              className="p-4 bg-white shadow-xl shadow-primary/5 rounded-2xl text-slate-400 hover:text-primary transition-all hover:scale-105 border border-slate-50"
+              title="Subject Settings"
+            >
+              <Settings2 className="w-6 h-6" />
+            </Link>
+            <button 
+              onClick={() => setShowAddTest(true)}
+              className="bg-primary text-white px-8 py-4 rounded-2xl font-black shadow-xl shadow-primary/20 hover:bg-[#152e75] hover:scale-[1.02] transition-all flex items-center gap-3 shrink-0"
+            >
+              <Plus className="w-6 h-6" />
+              Add New Test
+            </button>
+          </div>
         </div>
       </div>
 
@@ -108,18 +128,33 @@ export default function SubjectDetailPage() {
         </div>
         <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
           <p className="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest mb-1">Total Questions</p>
-          <p className="text-2xl font-black text-[#0f172a]">0</p>
+          <p className="text-2xl font-black text-[#0f172a]">{tests.reduce((acc, test) => acc + (test.question_count || 0), 0)}</p>
         </div>
         <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
           <p className="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest mb-1">Average Time</p>
           <p className="text-2xl font-black text-[#0f172a]">45m</p>
         </div>
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-          <p className="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-500"></div>
-            <p className="text-lg font-black text-[#0f172a]">Ready</p>
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex justify-between items-center group">
+          <div>
+            <p className="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p>
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${subject?.status === 'disabled' ? 'bg-red-500' : 'bg-green-500'}`}></div>
+              <p className="text-lg font-black text-[#0f172a]">{subject?.status === 'disabled' ? 'Disabled' : 'Enabled'}</p>
+            </div>
           </div>
+          <button 
+            onClick={async () => {
+              const res = await toggleSubjectStatus(id, subject?.status || 'enabled')
+              if (res.success) fetchData()
+            }}
+            className={`px-4 py-2 rounded-xl font-bold text-xs transition-all ${
+              subject?.status === 'disabled' 
+              ? 'bg-green-50 text-green-700 hover:bg-green-100' 
+              : 'bg-red-50 text-red-700 hover:bg-red-100'
+            }`}
+          >
+            {subject?.status === 'disabled' ? 'Enable Subject' : 'Disable Subject'}
+          </button>
         </div>
       </div>
 
@@ -132,9 +167,13 @@ export default function SubjectDetailPage() {
             </h2>
             <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-slate-400">Sort by:</span>
-                <select className="bg-transparent text-sm font-black text-slate-600 cursor-pointer outline-none">
-                    <option>Newest First</option>
-                    <option>A - Z</option>
+                <select 
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="bg-transparent text-sm font-black text-slate-600 cursor-pointer outline-none hover:text-primary transition-colors"
+                >
+                    <option value="newest">Newest First</option>
+                    <option value="alphabetical">A - Z</option>
                 </select>
             </div>
         </div>
@@ -155,18 +194,34 @@ export default function SubjectDetailPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
-            {tests.map((test) => (
+            {sortedTests.map((test) => (
               <div key={test.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-xl shadow-primary/5 hover:border-primary/20 transition-all group">
                 <div className="flex justify-between items-start mb-6">
-                  <div className="p-4 bg-slate-50 rounded-2xl group-hover:bg-primary/5 group-hover:scale-110 transition-all">
-                    <FileText className="w-6 h-6 text-primary" />
+                  <div className="flex items-center gap-4">
+                    <div className="p-4 bg-slate-50 rounded-2xl group-hover:bg-primary/5 group-hover:scale-110 transition-all relative">
+                      <FileText className="w-6 h-6 text-primary" />
+                      {test.is_paid && (
+                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+                          <DollarSign className="w-2.5 h-2.5 text-white" />
+                        </div>
+                      )}
+                    </div>
+                    <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                      test.status === 'published' 
+                      ? 'bg-blue-100 text-blue-700 border border-blue-200' 
+                      : 'bg-amber-100 text-amber-700 border border-amber-200'
+                    }`}>
+                      {test.status === 'published' ? 'Published' : 'Draft'}
+                    </div>
                   </div>
-                  <button className="p-2 hover:bg-slate-50 rounded-full transition-colors">
-                    <MoreVertical className="w-4 h-4 text-slate-400" />
-                  </button>
+                  <TestCardActions 
+                    test={test} 
+                    subjectId={id} 
+                    onRefresh={fetchData} 
+                  />
                 </div>
                 
-                <h4 className="text-xl font-black text-[#0f172a] mb-2">{test.title}</h4>
+                <h4 className="text-xl font-black text-[#0f172a] mb-2 capitalize">{test.title}</h4>
                 
                 <div className="flex flex-wrap gap-3 mt-6 pt-6 border-t border-slate-50">
                   <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-xl">
@@ -178,7 +233,7 @@ export default function SubjectDetailPage() {
                   </div>
                   <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-xl">
                     <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">0 Qs</span>
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{test.question_count || 0} Qs</span>
                   </div>
                 </div>
 
@@ -190,10 +245,13 @@ export default function SubjectDetailPage() {
                         <Settings className="w-4 h-4" />
                         Manage
                     </Link>
-                    <button className="flex items-center justify-center gap-2 py-4 bg-primary/5 text-primary rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-primary hover:text-white transition-all shadow-sm">
+                    <Link 
+                        href={`/admin/tests/${test.id}/preview`}
+                        className="flex items-center justify-center gap-2 py-4 bg-primary/5 text-primary rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-primary hover:text-white transition-all shadow-sm"
+                    >
                         <Play className="w-4 h-4" />
                         Preview
-                    </button>
+                    </Link>
                 </div>
               </div>
             ))}

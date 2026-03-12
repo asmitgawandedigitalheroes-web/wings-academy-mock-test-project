@@ -9,21 +9,29 @@ import {
   BookOpen,
   FileText,
   ChevronRight,
-  Plane,
   HelpCircle,
-  CreditCard
+  CreditCard,
+  ClipboardList,
+  TrendingUp,
+  Settings,
+  Layers,
+  Activity,
+  X
 } from 'lucide-react'
 import Image from 'next/image'
+import { getPlatformSettings } from '@/app/actions/admin'
 
 const menuItems = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { name: 'User Management', href: '/admin/users', icon: Users },
-  { name: 'Question Bank', href: '/admin/questions', icon: HelpCircle },
-  { name: 'Manage Courses', href: '/admin/courses', icon: BookOpen },
-  { name: 'Subscriptions', href: '/admin/subscriptions', icon: CreditCard },
+  { name: 'Students', href: '/admin/users', icon: Users },
+  { name: 'Subjects', href: '/admin/subjects', icon: Layers },
+  { name: 'Tests', href: '/admin/tests', icon: FileText },
+  { name: 'Results', href: '/admin/results', icon: ClipboardList },
+  { name: 'Payments', href: '/admin/payments', icon: CreditCard },
+  { name: 'Analytics', href: '/admin/analytics', icon: TrendingUp },
+  { name: 'Activity Log', href: '/admin/activity', icon: Activity },
+  { name: 'Settings', href: '/admin/settings', icon: Settings },
 ]
-
-import { X } from 'lucide-react'
 
 interface AdminSidebarProps {
   isOpen: boolean;
@@ -32,6 +40,17 @@ interface AdminSidebarProps {
 
 export default function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
   const pathname = usePathname()
+  const [platformName, setPlatformName] = React.useState('Wings Academy Admin')
+
+  React.useEffect(() => {
+    async function loadSettings() {
+      const data = await getPlatformSettings()
+      if (data?.platform_name) {
+        setPlatformName(data.platform_name)
+      }
+    }
+    loadSettings()
+  }, [])
 
   return (
     <>
@@ -94,7 +113,7 @@ export default function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
           <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-sm shadow-green-500/50"></div>
           <span>System Online</span>
         </div>
-        <p>© {new Date().getFullYear()} Wings Academy Admin</p>
+        <p>© {new Date().getFullYear()} {platformName}</p>
       </div>
     </aside>
     </>

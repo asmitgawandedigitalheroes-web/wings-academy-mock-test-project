@@ -5,9 +5,10 @@ import Stats from '@/components/home/Stats'
 import HowItWorks from '@/components/home/HowItWorks'
 import Subjects from '@/components/home/Subjects'
 import Features from '@/components/home/Features'
+import PerformanceSection from '@/components/home/PerformanceSection'
+import ExcellenceSection from '@/components/home/ExcellenceSection'
 import DashboardPreview from '@/components/home/DashboardPreview'
 import FinalCTA from '@/components/home/FinalCTA'
-import ExamsSection from '@/components/home/ExamsSection'
 
 export default function Home() {
   return (
@@ -16,9 +17,10 @@ export default function Home() {
       <Hero />
       <Stats />
       <HowItWorks />
-      <ExamsSection />
-      <Subjects />
       <Features />
+      <PerformanceSection />
+      <ExcellenceSection />
+      <Subjects />
       <DashboardPreview />
       <FinalCTA />
       <Footer />

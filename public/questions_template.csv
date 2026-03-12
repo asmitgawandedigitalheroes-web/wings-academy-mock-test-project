@@ -1,4 +1,4 @@
-question_text,question_type,options,correct_options,explanation
-"What is the capital of France?","single","Paris|London|Berlin|Madrid","0","Paris is the capital and largest city of France."
-"Which of these are prime numbers?","multiple","2|4|5|9","0|2","2 and 5 are prime numbers, while 4 and 9 are composite."
-"The first airplane was invented by?","single","Wright Brothers|Thomas Edison|Nikola Tesla|Daimler","0","The Wright brothers, Orville and Wilbur, are credited with inventing and building the world's first successful motor-operated airplane."
+question_text,question_type,option_a,option_b,option_c,option_d,correct_answer,difficulty,explanation
+"What is the capital of France?","Single Choice","Paris","London","Berlin","Madrid","A","Easy","Paris is the capital and largest city of France."
+"Which of these are prime numbers?","Multiple Choice","2","4","5","9","A,C","Medium","2 and 5 are prime numbers, while 4 and 9 are composite."
+"The first airplane was invented by?","Single Choice","Wright Brothers","Thomas Edison","Nikola Tesla","Daimler","A","Hard","The Wright brothers, Orville and Wilbur, are credited with inventing the world's first successful motor-operated airplane."

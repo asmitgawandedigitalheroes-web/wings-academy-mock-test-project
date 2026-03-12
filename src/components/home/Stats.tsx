@@ -30,7 +30,7 @@ const Stats = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {stats.map((stat, index) => (
-            <div key={index} className="flex items-start gap-4 p-5 rounded-2xl bg-[#152e75] hover:bg-[#1a368d] transition-colors group">
+            <div key={index} className="flex items-start gap-4 p-5 rounded-2xl bg-white/5 hover:bg-white/10 transition-colors group">
               <div className="p-3 rounded-xl bg-primary shadow-inner flex-shrink-0 group-hover:scale-105 transition-transform">
                 {stat.icon}
               </div>
