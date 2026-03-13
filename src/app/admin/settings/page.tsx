@@ -17,7 +17,7 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react'
-import { getPlatformSettings, updatePlatformSettings, getAdminEmail, updateAdminCredentials } from '@/app/actions/admin'
+import { getPlatformSettings, updatePlatformSettings, getAdminEmail, updateAdminCredentials, flushPlatformCache } from '@/app/actions/admin'
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<'general' | 'payments' | 'security' | 'notifications'>('general')
@@ -33,6 +33,10 @@ export default function SettingsPage() {
   
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+  // Cache Flush State
+  const [isFlushing, setIsFlushing] = useState(false)
+  const [flushMessage, setFlushMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
   // Form State
   const [settings, setSettings] = useState({
@@ -132,6 +136,26 @@ export default function SettingsPage() {
       setSecurityMessage({ type: 'error', text: 'An unexpected error occurred.' })
     } finally {
       setIsUpdatingSecurity(false)
+    }
+  }
+
+  const handleFlushCache = async () => {
+    try {
+      setIsFlushing(true)
+      setFlushMessage(null)
+      const res = await flushPlatformCache()
+      if (res.success) {
+        setFlushMessage({ type: 'success', text: 'Cache flushed successfully!' })
+        // Clear message after 3 seconds
+        setTimeout(() => setFlushMessage(null), 3000)
+      } else {
+        setFlushMessage({ type: 'error', text: res.error || 'Failed to flush cache.' })
+      }
+    } catch (err) {
+      console.error(err)
+      setFlushMessage({ type: 'error', text: 'An unexpected error occurred.' })
+    } finally {
+      setIsFlushing(false)
     }
   }
 
@@ -256,14 +280,30 @@ export default function SettingsPage() {
                         <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settings.maintenance_mode ? 'right-1' : 'left-1'}`}></div>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between p-6 bg-red-50/30 rounded-[2rem] border border-red-100 group">
-                      <div>
-                        <p className="text-sm font-black text-red-600">Flush Cache</p>
-                        <p className="text-xs text-red-400 font-medium">Clear all server-side cached data.</p>
+                    <div className="flex flex-col p-6 bg-red-50/30 rounded-[2rem] border border-red-100 group gap-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-black text-red-600">Flush Cache</p>
+                          <p className="text-xs text-red-400 font-medium">Clear all server-side cached data.</p>
+                        </div>
+                        <button 
+                          onClick={handleFlushCache}
+                          disabled={isFlushing}
+                          className="px-4 py-2 bg-white text-red-500 border border-red-100 rounded-xl text-xs font-black hover:bg-red-50 transition-all flex items-center gap-2 disabled:opacity-50"
+                        >
+                          {isFlushing ? (
+                            <div className="w-3 h-3 border-2 border-red-200 border-t-red-500 rounded-full animate-spin"></div>
+                          ) : null}
+                          {isFlushing ? 'Executing...' : 'Execute'}
+                        </button>
                       </div>
-                      <button className="px-4 py-2 bg-white text-red-500 border border-red-100 rounded-xl text-xs font-black hover:bg-red-50 transition-all">
-                        Execute
-                      </button>
+                      {flushMessage && (
+                        <div className={`text-xs font-bold p-2 rounded-lg ${
+                          flushMessage.type === 'success' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'
+                        }`}>
+                          {flushMessage.text}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

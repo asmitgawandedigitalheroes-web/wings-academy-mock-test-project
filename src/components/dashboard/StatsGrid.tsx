@@ -1,11 +1,11 @@
 'use client'
 
 import React from 'react'
-import { 
-  FileText, 
-  Target, 
-  Zap, 
-  Clock 
+import {
+  ClipboardList,
+  TrendingUp,
+  Award,
+  Wallet
 } from 'lucide-react'
 
 interface StatsGridProps {
@@ -15,17 +15,17 @@ interface StatsGridProps {
 export default function StatsGrid({ stats }: StatsGridProps) {
   if (stats.error) {
     return (
-        <div className="bg-red-50 p-4 rounded-2xl border border-red-100 text-red-600 font-bold text-sm">
-            Error loading stats: {stats.error}
-        </div>
+      <div className="bg-red-50 p-4 rounded-2xl border border-red-100 text-red-600 font-bold text-sm">
+        Error loading stats: {stats.error}
+      </div>
     )
   }
 
   const statsItems = [
-    { name: 'Tests Taken', value: stats.testsTaken || '0', icon: FileText, color: 'bg-blue-50 text-blue-600' },
-    { name: 'Average Score', value: stats.avgScore || '0%', icon: Target, color: 'bg-green-50 text-green-600' },
-    { name: 'Study Streak', value: stats.streak || '0 Days', icon: Zap, color: 'bg-amber-50 text-amber-600' },
-    { name: 'Last Session', value: stats.lastSession || 'Never', icon: Clock, color: 'bg-purple-50 text-purple-600' },
+    { name: 'Tests Attempted', value: stats.testsTaken || '0', icon: ClipboardList, color: 'bg-primary/5 text-primary' },
+    { name: 'Average Score', value: stats.avgScore || '0%', icon: TrendingUp, color: 'bg-primary/5 text-primary' },
+    { name: 'Tests Passed', value: stats.testsPassed || '0', icon: Award, color: 'bg-primary/5 text-primary' },
+    { name: 'Purchased Tests', value: stats.purchasedTests || '0', icon: Wallet, color: 'bg-primary/5 text-primary' },
   ]
 
   return (

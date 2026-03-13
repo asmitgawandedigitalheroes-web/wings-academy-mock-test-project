@@ -22,6 +22,7 @@ import {
   MoreVertical
 } from 'lucide-react'
 import Link from 'next/link'
+import BackButton from '@/components/common/BackButton'
 import { getTestDetails, getQuestionsByTest, deleteQuestion, bulkUploadQuestions, toggleTestStatus } from '@/app/actions/admin'
 import ConfirmationModal from '@/components/common/ConfirmationModal'
 import * as XLSX from 'xlsx'
@@ -129,6 +130,8 @@ export default function TestQuestionsPage() {
         {...modalConfig}
         onCancel={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
       />
+
+      <BackButton variant="ghost" className="-ml-3" />
 
       {/* Header Section */}
       <div className="flex flex-col gap-8">

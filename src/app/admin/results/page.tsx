@@ -16,12 +16,14 @@ import {
   ChevronDown
 } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
+import Link from 'next/link'
 
 export default function ResultsPage() {
   const [results, setResults] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'pass' | 'fail'>('all')
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -30,21 +32,67 @@ export default function ResultsPage() {
 
   const fetchResults = async () => {
     setLoading(true)
-    // In a real app, you'd have a user_results or test_attempts table
-    // For now, let's mock the data or fetch from a likely table name
+    
+    // Fetch completed test attempts and join with profiles and test_sets
     const { data, error } = await supabase
-      .from('user_results')
+      .from('test_results')
       .select(`
-        *,
-        profiles (full_name, email),
-        test_sets (title, subject_id, subjects (name))
+        id,
+        user_id,
+        test_set_id,
+        score,
+        completed_at,
+        profiles (
+          full_name,
+          email
+        ),
+        test_sets (
+          title,
+          pass_percentage,
+          subject_id,
+          subjects (name)
+        )
       `)
-      .order('created_at', { ascending: false })
+      .order('completed_at', { ascending: false })
 
-    if (!error) {
-      setResults(data || [])
+    if (error) {
+        console.error('Detailed Error fetching results:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+        })
+        setResults([])
+    } else {
+        // Map completed_at to created_at so the rest of the UI doesn't break
+        const mappedData = (data || []).map(item => ({
+            ...item,
+            created_at: item.completed_at
+        }))
+        setResults(mappedData as any)
     }
+    
     setLoading(false)
+  }
+
+  const handleDeleteResult = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this test result? This action cannot be undone.')) {
+      return
+    }
+
+    setDeletingId(id)
+    const { error } = await supabase
+      .from('test_results')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      console.error('Error deleting result:', error)
+      alert('Failed to delete result. Please try again.')
+    } else {
+      setResults(results.filter(r => r.id !== id))
+    }
+    setDeletingId(null)
   }
 
   const filteredResults = results.filter(res => {
@@ -64,6 +112,11 @@ export default function ResultsPage() {
   const totalAttempts = results.length
   const passCount = results.filter(r => r.score >= (r.test_sets?.pass_percentage || 70)).length
   const passRate = totalAttempts > 0 ? Math.round((passCount / totalAttempts) * 100) : 0
+  
+  // Calculate today's tests
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const todaysTests = results.filter(r => new Date(r.created_at) >= today).length
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -111,7 +164,7 @@ export default function ResultsPage() {
             </div>
             <div>
               <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Today's Tests</p>
-              <h3 className="text-2xl font-black text-[#0f172a]">12</h3>
+              <h3 className="text-2xl font-black text-[#0f172a]">{todaysTests}</h3>
             </div>
           </div>
         </div>
@@ -214,11 +267,22 @@ export default function ResultsPage() {
                       </td>
                       <td className="px-8 py-6 text-right">
                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button className="p-2 hover:bg-white hover:shadow-md rounded-xl transition-all text-slate-400 hover:text-primary border border-transparent hover:border-slate-100">
+                          <Link 
+                            href={`/admin/results/${result.id}`}
+                            className="p-2 hover:bg-white hover:shadow-md rounded-xl transition-all text-slate-400 hover:text-primary border border-transparent hover:border-slate-100"
+                          >
                             <Eye className="w-4 h-4" />
-                          </button>
-                          <button className="p-2 hover:bg-white hover:shadow-md rounded-xl transition-all text-slate-400 hover:text-red-500 border border-transparent hover:border-slate-100">
-                            <Trash2 className="w-4 h-4" />
+                          </Link>
+                          <button 
+                            onClick={() => handleDeleteResult(result.id)}
+                            disabled={deletingId === result.id}
+                            className="p-2 hover:bg-white hover:shadow-md rounded-xl transition-all text-slate-400 hover:text-red-500 border border-transparent hover:border-slate-100 disabled:opacity-50"
+                          >
+                            {deletingId === result.id ? (
+                                <div className="w-4 h-4 border-2 border-red-500/20 border-t-red-500 rounded-full animate-spin"></div>
+                            ) : (
+                                <Trash2 className="w-4 h-4" />
+                            )}
                           </button>
                         </div>
                       </td>
@@ -277,12 +341,23 @@ export default function ResultsPage() {
                     </div>
 
                     <div className="flex items-center justify-end gap-2 pt-2">
-                        <button className="flex-1 flex items-center justify-center gap-2 py-3 bg-slate-50 text-slate-400 rounded-xl text-[10px] font-black uppercase tracking-widest">
+                        <Link 
+                          href={`/admin/results/${result.id}`}
+                          className="flex-1 flex items-center justify-center gap-2 py-3 bg-slate-50 text-slate-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary/5 hover:text-primary transition-colors"
+                        >
                             <Eye className="w-4 h-4" />
-                            View
-                        </button>
-                        <button className="p-3 bg-red-50 text-red-400 rounded-xl">
-                            <Trash2 className="w-4 h-4" />
+                            View Detail
+                        </Link>
+                        <button 
+                          onClick={() => handleDeleteResult(result.id)}
+                          disabled={deletingId === result.id}
+                          className="p-3 bg-red-50 text-red-400 rounded-xl hover:bg-red-100 transition-colors disabled:opacity-50"
+                        >
+                            {deletingId === result.id ? (
+                                <div className="w-4 h-4 border-2 border-red-400/20 border-t-red-400 rounded-full animate-spin"></div>
+                            ) : (
+                                <Trash2 className="w-4 h-4" />
+                            )}
                         </button>
                     </div>
                 </div>

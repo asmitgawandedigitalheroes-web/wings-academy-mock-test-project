@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { 
-  ChevronLeft, 
   User, 
   Mail, 
   Calendar, 
@@ -17,6 +16,7 @@ import {
   History
 } from 'lucide-react'
 import Link from 'next/link'
+import BackButton from '@/components/common/BackButton'
 import { createClient } from '@/utils/supabase/client'
 
 export default function StudentProfilePage() {
@@ -46,25 +46,41 @@ export default function StudentProfilePage() {
     
     // Fetch test results
     const { data: resultsData } = await supabase
-      .from('user_results')
+      .from('test_results')
       .select(`
         *,
-        test_sets (title, subjects (name))
+        test_sets (title, pass_percentage, subjects (name))
       `)
       .eq('user_id', id)
-      .order('created_at', { ascending: false })
+      .order('completed_at', { ascending: false })
 
     setProfile(profileData)
-    setRecentTests(resultsData || [])
+    
+    // Map data for UI
+    const mappedResults = (resultsData || []).map(r => ({
+      ...r,
+      score: typeof r.score === 'string' ? parseFloat(r.score) : r.score,
+      created_at: r.completed_at
+    }))
+    
+    setRecentTests(mappedResults)
     
     // Calculate stats
-    if (resultsData && resultsData.length > 0) {
-      const avgScore = Math.round(resultsData.reduce((sum, r) => sum + r.score, 0) / resultsData.length)
-      const passedTests = resultsData.filter(r => r.score >= (r.test_sets?.pass_percentage || 70)).length
+    if (mappedResults.length > 0) {
+      const totalScore = mappedResults.reduce((sum, r) => sum + r.score, 0)
+      const avgScore = Math.round(totalScore / mappedResults.length)
+      const passedTests = mappedResults.filter(r => r.score >= (r.test_sets?.pass_percentage || 70)).length
+      
       setStats({
-        totalTests: resultsData.length,
+        totalTests: mappedResults.length,
         avgScore,
-        passPercentage: Math.round((passedTests / resultsData.length) * 100)
+        passPercentage: Math.round((passedTests / mappedResults.length) * 100)
+      })
+    } else {
+      setStats({
+        totalTests: 0,
+        avgScore: 0,
+        passPercentage: 0
       })
     }
 
@@ -82,13 +98,7 @@ export default function StudentProfilePage() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <Link 
-        href="/admin/users"
-        className="inline-flex items-center gap-2 text-slate-400 font-bold hover:text-primary transition-colors"
-      >
-        <ChevronLeft className="w-5 h-5" />
-        Back to Users
-      </Link>
+      <BackButton variant="ghost" className="-ml-3" />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Profile Card */}

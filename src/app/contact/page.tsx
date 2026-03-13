@@ -1,8 +1,9 @@
 import React from 'react'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
-import { Mail, Phone, MapPin, Send } from 'lucide-react'
+import { Mail, Phone, MapPin } from 'lucide-react'
 import { getPlatformSettings } from '../actions/admin'
+import ContactForm from '@/components/contact/ContactForm'
 
 export default async function ContactPage() {
   const settings = await getPlatformSettings()
@@ -69,33 +70,7 @@ export default async function ContactPage() {
             </div>
 
             {/* Contact Form */}
-            <div className="bg-white p-8 rounded-3xl shadow-xl shadow-primary/5 border border-slate-100 h-fit">
-              <h2 className="text-2xl font-bold text-[#0f172a] mb-6">Send a Message</h2>
-              <form className="space-y-6" action="#" method="POST">
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <label htmlFor="first-name" className="block text-sm font-bold text-slate-700 mb-2">First Name</label>
-                    <input type="text" id="first-name" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 focus:ring-primary focus:border-primary outline-none transition-colors" placeholder="John" />
-                  </div>
-                  <div>
-                    <label htmlFor="last-name" className="block text-sm font-bold text-slate-700 mb-2">Last Name</label>
-                    <input type="text" id="last-name" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 focus:ring-primary focus:border-primary outline-none transition-colors" placeholder="Doe" />
-                  </div>
-                </div>
-                <div>
-                  <label htmlFor="email" className="block text-sm font-bold text-slate-700 mb-2">Email Address</label>
-                  <input type="email" id="email" className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 focus:ring-primary focus:border-primary outline-none transition-colors" placeholder="you@example.com" />
-                </div>
-                <div>
-                  <label htmlFor="message" className="block text-sm font-bold text-slate-700 mb-2">Your Message</label>
-                  <textarea id="message" rows={4} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 focus:ring-primary focus:border-primary outline-none transition-colors resize-none" placeholder="How can we help you?"></textarea>
-                </div>
-                <button type="button" className="w-full flex justify-center items-center gap-2 py-4 px-4 border border-transparent rounded-xl shadow-lg shadow-primary/20 text-sm font-bold text-white bg-primary hover:bg-[#152e75] transition-all">
-                  Send Message
-                  <Send className="w-4 h-4" />
-                </button>
-              </form>
-            </div>
+            <ContactForm />
           </div>
         </div>
       </main>

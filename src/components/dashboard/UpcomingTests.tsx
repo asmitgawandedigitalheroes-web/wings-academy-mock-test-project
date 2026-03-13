@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Calendar, PlayCircle } from 'lucide-react'
+import { Calendar, PlayCircle, Library } from 'lucide-react'
 
 interface UpcomingTestsProps {
   data: any[]
@@ -40,7 +40,9 @@ export default function UpcomingTests({ data }: UpcomingTestsProps) {
       
       {data.length === 0 && (
         <div className="py-10 text-center space-y-3">
-          <div className="text-4xl">📚</div>
+          <div className="flex justify-center">
+            <Library className="w-12 h-12 text-slate-300" />
+          </div>
           <p className="font-bold text-[#0f172a]">No available tests</p>
           <p className="text-xs text-slate-400">Wait for administrators to publish mock exams.</p>
         </div>

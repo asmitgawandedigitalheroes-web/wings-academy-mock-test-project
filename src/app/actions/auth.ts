@@ -26,7 +26,9 @@ export async function login(formData: FormData) {
     .eq('id', data.user.id)
     .single()
 
-  revalidatePath('/', 'layout')
+  revalidatePath('/admin', 'layout')
+  revalidatePath('/dashboard', 'layout')
+  revalidatePath('/', 'page')
   
   if (profile?.role === 'admin') {
     return redirect('/admin')
@@ -56,14 +58,18 @@ export async function signup(formData: FormData) {
     return redirect(`/signup?error=${encodeURIComponent(error.message)}`)
   }
 
-  revalidatePath('/', 'layout')
+  revalidatePath('/admin', 'layout')
+  revalidatePath('/dashboard', 'layout')
+  revalidatePath('/', 'page')
   return redirect('/login?message=Check your email to confirm your account')
 }
 
 export async function signout() {
   const supabase = await createClient()
   await supabase.auth.signOut()
-  revalidatePath('/', 'layout')
+  revalidatePath('/admin', 'layout')
+  revalidatePath('/dashboard', 'layout')
+  revalidatePath('/', 'page')
   return redirect('/')
 }
 

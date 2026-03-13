@@ -979,3 +979,14 @@ export async function createUser(formData: { name: string, email: string, passwo
   revalidatePath('/admin/users')
   return { success: true }
 }
+
+export async function flushPlatformCache() {
+  try {
+    // Revalidate all paths
+    revalidatePath('/', 'layout')
+    return { success: true }
+  } catch (error: any) {
+    console.error('Error flushing cache:', error)
+    return { error: error.message || 'Failed to flush cache' }
+  }
+}

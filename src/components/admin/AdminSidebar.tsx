@@ -16,6 +16,7 @@ import {
   Settings,
   Layers,
   Activity,
+  Mail,
   X
 } from 'lucide-react'
 import Image from 'next/image'
@@ -29,6 +30,7 @@ const menuItems = [
   { name: 'Results', href: '/admin/results', icon: ClipboardList },
   { name: 'Payments', href: '/admin/payments', icon: CreditCard },
   { name: 'Analytics', href: '/admin/analytics', icon: TrendingUp },
+  { name: 'Enquiries', href: '/admin/enquiries', icon: Mail },
   { name: 'Activity Log', href: '/admin/activity', icon: Activity },
   { name: 'Settings', href: '/admin/settings', icon: Settings },
 ]
@@ -85,7 +87,7 @@ export default function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
       {/* Navigation Links */}
       <nav className="flex-1 mt-6 px-4 space-y-2 overflow-y-auto">
         {menuItems.map((item) => {
-          const isActive = pathname === item.href
+          const isActive = item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href)
           return (
             <Link
               key={item.href}

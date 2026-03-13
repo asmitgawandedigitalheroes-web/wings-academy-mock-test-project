@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { 
-  ChevronLeft, 
   Plus, 
   FileText, 
   Clock, 
@@ -17,6 +16,7 @@ import {
   DollarSign
 } from 'lucide-react'
 import Link from 'next/link'
+import BackButton from '@/components/common/BackButton'
 import { getSubjectDetails, getTestsBySubject, toggleSubjectStatus } from '@/app/actions/admin'
 import AddTestModal from '@/components/admin/tests/AddTestModal'
 import TestCardActions from '@/components/admin/tests/TestCardActions'
@@ -85,13 +85,7 @@ export default function SubjectDetailPage() {
 
       {/* Breadcrumb & Title */}
       <div className="flex flex-col gap-4">
-        <Link 
-          href="/admin/questions"
-          className="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors font-bold text-sm"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          Back to Subjects
-        </Link>
+        <BackButton variant="ghost" className="-ml-3" />
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-5">
             <div className="w-16 h-16 bg-white shadow-xl shadow-primary/5 rounded-3xl flex items-center justify-center">

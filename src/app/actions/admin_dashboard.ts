@@ -5,40 +5,24 @@ import { createClient } from '@/utils/supabase/server'
 export async function getAdminDashboardStats() {
   const supabase = await createClient()
 
-  // 1. Total Students
-  const { count: studentCount, error: studentError } = await supabase
-    .from('profiles')
-    .select('*', { count: 'exact', head: true })
-    .eq('role', 'student')
-
-  // 2. Total Subjects
-  const { count: subjectCount, error: subjectError } = await supabase
-    .from('subjects')
-    .select('*', { count: 'exact', head: true })
-
-  // 3. Question Bank Size
-  const { count: questionCount, error: questionError } = await supabase
-    .from('questions')
-    .select('*', { count: 'exact', head: true })
-
-  // 4. Active Mock Tests
-  const { count: testCount, error: testError } = await supabase
-    .from('test_sets')
-    .select('*', { count: 'exact', head: true })
-    .eq('is_hidden', false)
-
-  // 5. Total Revenue
-  const { data: payments, error: paymentError } = await supabase
-    .from('payments')
-    .select('amount')
-    .eq('status', 'completed')
+  // Execute all count and sum queries in parallel
+  const [
+    { count: studentCount, error: studentError },
+    { count: subjectCount, error: subjectError },
+    { count: questionCount, error: questionError },
+    { count: testCount, error: testError },
+    { data: payments, error: paymentError },
+    { data: results, error: resultsError }
+  ] = await Promise.all([
+    supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student'),
+    supabase.from('subjects').select('*', { count: 'exact', head: true }),
+    supabase.from('questions').select('*', { count: 'exact', head: true }),
+    supabase.from('test_sets').select('*', { count: 'exact', head: true }).eq('is_hidden', false),
+    supabase.from('payments').select('amount').eq('status', 'completed'),
+    supabase.from('test_results').select('score')
+  ])
 
   const totalRevenue = payments?.reduce((acc, curr) => acc + Number(curr.amount), 0) || 0
-
-  // 6. Average Pass Rate
-  const { data: results, error: resultsError } = await supabase
-    .from('test_results')
-    .select('score')
 
   const avgPassRate = results && results.length > 0
     ? Math.round(results.filter(r => Number(r.score) >= 70).length / results.length * 100)
@@ -60,33 +44,18 @@ export async function getAdminDashboardStats() {
 export async function getRecentAdminActivity() {
   const supabase = await createClient()
 
-  // Fetch recent profiles (signups)
-  const { data: newProfiles } = await supabase
-    .from('profiles')
-    .select('full_name, created_at')
-    .order('created_at', { ascending: false })
-    .limit(5)
-
-  // Fetch recent test results
-  const { data: recentTests } = await supabase
-    .from('test_results')
-    .select('score, completed_at, test_sets(title), profiles(full_name)')
-    .order('completed_at', { ascending: false })
-    .limit(5)
-
-  // Fetch recent tests (creation)
-  const { data: newTests } = await supabase
-    .from('test_sets')
-    .select('title, created_at')
-    .order('created_at', { ascending: false })
-    .limit(5)
-
-  // Fetch recent subjects
-  const { data: newSubjects } = await supabase
-    .from('subjects')
-    .select('name, created_at')
-    .order('created_at', { ascending: false })
-    .limit(5)
+  // Fetch all categories of activity in parallel
+  const [
+    { data: newProfiles },
+    { data: recentTests },
+    { data: newTests },
+    { data: newSubjects }
+  ] = await Promise.all([
+    supabase.from('profiles').select('full_name, created_at').order('created_at', { ascending: false }).limit(5),
+    supabase.from('test_results').select('score, completed_at, test_sets(title), profiles(full_name)').order('completed_at', { ascending: false }).limit(5),
+    supabase.from('test_sets').select('title, created_at').order('created_at', { ascending: false }).limit(5),
+    supabase.from('subjects').select('name, created_at').order('created_at', { ascending: false }).limit(5)
+  ])
 
   const activities: any[] = []
 
@@ -220,22 +189,10 @@ export async function getAdminAnalytics(days: number = 14) {
     { data: payments },
     { data: subDistribution }
   ] = await Promise.all([
-    supabase
-      .from('profiles')
-      .select('created_at')
-      .gte('created_at', startDate.toISOString()),
-    supabase
-      .from('test_results')
-      .select('completed_at')
-      .gte('completed_at', startDate.toISOString()),
-    supabase
-      .from('payments')
-      .select('amount, created_at')
-      .eq('status', 'completed')
-      .gte('created_at', startDate.toISOString()),
-    supabase
-      .from('test_results')
-      .select('test_sets(subjects(name))')
+    supabase.from('profiles').select('created_at').gte('created_at', startDate.toISOString()),
+    supabase.from('test_results').select('completed_at').gte('completed_at', startDate.toISOString()),
+    supabase.from('payments').select('amount, created_at').eq('status', 'completed').gte('created_at', startDate.toISOString()),
+    supabase.from('test_results').select('test_sets(subjects(name))')
   ])
 
   // 1. Engagement Map (Last X days)
