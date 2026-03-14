@@ -116,6 +116,7 @@ export default function AddTestModal({
             </div>
         </div>
 
+{/* Temporarily hidden
         {isPaid && (
             <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Test Price (Stripe Mock)</label>
@@ -133,6 +134,7 @@ export default function AddTestModal({
                 </div>
             </div>
         )}
+        */}
 
         <div className="space-y-2">
           <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Test Title</label>
