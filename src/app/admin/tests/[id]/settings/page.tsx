@@ -37,7 +37,7 @@ export default function TestSettingsPage() {
     const [error, setError] = useState<string | null>(null)
     const [message, setMessage] = useState<string | null>(null)
 
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<any>({
         title: '',
         description: '',
         time_limit_minutes: 60,
@@ -106,6 +106,14 @@ export default function TestSettingsPage() {
 
         const result = await updateTestSettings(id, test.module_id, {
             ...formData,
+            time_limit_minutes: parseInt(formData.time_limit_minutes) || 0,
+            pass_percentage: parseInt(formData.pass_percentage) || 0,
+            target_questions: parseInt(formData.target_questions) || 0,
+            attempts_allowed: parseInt(formData.attempts_allowed) || 0,
+            cooldown_hours: parseInt(formData.cooldown_hours) || 0,
+            price: parseFloat(formData.price) || 0,
+            marks_per_question: parseFloat(formData.marks_per_question) || 0,
+            negative_marks: parseFloat(formData.negative_marks) || 0,
             start_date: formData.start_date || null,
             end_date: formData.end_date || null
         })
@@ -115,7 +123,7 @@ export default function TestSettingsPage() {
         } else {
             setMessage('Settings saved successfully!')
             setTimeout(() => setMessage(null), 3000)
-            router.push(`/admin/tests/${id}`)
+            router.replace(`/admin/tests/${id}`)
         }
         setSaving(false)
     }
@@ -148,6 +156,7 @@ export default function TestSettingsPage() {
             <div className="flex flex-col gap-4">
                 <Link 
                     href={`/admin/tests/${id}`}
+                    replace
                     className="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors font-bold text-sm"
                 >
                     <ChevronLeft className="w-4 h-4" />
@@ -211,25 +220,27 @@ export default function TestSettingsPage() {
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                             <InputGroup 
                                 label="Duration (Min)"
-                                type="number"
-                                min="0"
+                                icon={<Clock className="w-4 h-4" />}
+                                type="text"
                                 value={formData.time_limit_minutes}
-                                onChange={e => setFormData({ ...formData, time_limit_minutes: Math.max(0, parseInt(e.target.value) || 0) })}
+                                onChange={e => setFormData({ ...formData, time_limit_minutes: e.target.value.replace(/[^0-9]/g, '') })}
                             />
                             <InputGroup 
                                 label="Pass Percentage (%)"
-                                type="number"
-                                min="0"
-                                max="100"
+                                icon={<CheckCircle2 className="w-4 h-4" />}
+                                type="text"
                                 value={formData.pass_percentage}
-                                onChange={e => setFormData({ ...formData, pass_percentage: Math.min(100, Math.max(0, parseInt(e.target.value) || 0)) })}
+                                onChange={e => {
+                                    const val = e.target.value.replace(/[^0-9]/g, '');
+                                    setFormData({ ...formData, pass_percentage: Math.min(100, parseInt(val) || 0) });
+                                }}
                             />
                             <InputGroup 
                                 label="Target Questions"
-                                type="number"
-                                min="0"
+                                icon={<Layers className="w-4 h-4" />}
+                                type="text"
                                 value={formData.target_questions}
-                                onChange={e => setFormData({ ...formData, target_questions: Math.max(0, parseInt(e.target.value) || 0) })}
+                                onChange={e => setFormData({ ...formData, target_questions: e.target.value.replace(/[^0-9]/g, '') })}
                             />
                         </div>
                     </Section>
@@ -237,26 +248,31 @@ export default function TestSettingsPage() {
                     {/* Grading & Marking */}
                     <Section title="Grading & Marking" icon={<CheckCircle2 className="w-5 h-5" />}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-3 group/input">
-                                <label className="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Marks per Question</label>
-                                <input 
-                                    min="0"
-                                    step="0.1"
-                                    value={formData.marks_per_question}
-                                    onChange={e => setFormData({ ...formData, marks_per_question: Math.max(0, parseFloat(e.target.value) || 0) })}
-                                    className="w-full px-5 py-3.5 md:px-6 md:py-4 bg-slate-50 border-2 border-slate-100 rounded-xl md:rounded-2xl outline-none focus:border-primary/20 focus:ring-8 focus:ring-primary/5 transition-all duration-300 font-bold text-[#0f172a] hover:bg-white"
-                                />
-                            </div>
-                            <div className="space-y-3 group/input">
-                                <label className="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Negative Marking per Question</label>
-                                <input 
-                                    min="0"
-                                    step="0.1"
-                                    value={formData.negative_marks}
-                                    onChange={e => setFormData({ ...formData, negative_marks: Math.max(0, parseFloat(e.target.value) || 0) })}
-                                    className="w-full px-5 py-3.5 md:px-6 md:py-4 bg-slate-50 border-2 border-slate-100 rounded-xl md:rounded-2xl outline-none focus:border-primary/20 focus:ring-8 focus:ring-primary/5 transition-all duration-300 font-bold text-[#0f172a] hover:bg-white"
-                                />
-                            </div>
+                            <InputGroup 
+                                label="Marks per Question"
+                                icon={<CheckCircle2 className="w-4 h-4" />}
+                                type="text"
+                                value={formData.marks_per_question}
+                                onChange={e => {
+                                    const val = e.target.value.replace(/[^0-9.]/g, '');
+                                    // Only allow one decimal point
+                                    if ((val.match(/\./g) || []).length <= 1) {
+                                        setFormData({ ...formData, marks_per_question: val });
+                                    }
+                                }}
+                            />
+                            <InputGroup 
+                                label="Negative Marking per Question"
+                                icon={<AlertCircle className="w-4 h-4" />}
+                                type="text"
+                                value={formData.negative_marks}
+                                onChange={e => {
+                                    const val = e.target.value.replace(/[^0-9.]/g, '');
+                                    if ((val.match(/\./g) || []).length <= 1) {
+                                        setFormData({ ...formData, negative_marks: val });
+                                    }
+                                }}
+                            />
                         </div>
                         <div className="mt-4 p-4 bg-primary/5 rounded-2xl border border-primary/10">
                             <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1 flex items-center gap-2">
@@ -276,17 +292,17 @@ export default function TestSettingsPage() {
                             <div className="space-y-6">
                                 <InputGroup 
                                     label="Attempts (0 for ∞)"
-                                    type="number"
-                                    min="0"
+                                    icon={<Layers className="w-4 h-4" />}
+                                    type="text"
                                     value={formData.attempts_allowed}
-                                    onChange={e => setFormData({ ...formData, attempts_allowed: Math.max(0, parseInt(e.target.value) || 0) })}
+                                    onChange={e => setFormData({ ...formData, attempts_allowed: e.target.value.replace(/[^0-9]/g, '') })}
                                 />
                                 <InputGroup 
                                     label="Cooldown (Hours)"
-                                    type="number"
-                                    min="0"
+                                    icon={<Clock className="w-4 h-4" />}
+                                    type="text"
                                     value={formData.cooldown_hours}
-                                    onChange={e => setFormData({ ...formData, cooldown_hours: Math.max(0, parseInt(e.target.value) || 0) })}
+                                    onChange={e => setFormData({ ...formData, cooldown_hours: e.target.value.replace(/[^0-9]/g, '') })}
                                 />
                             </div>
                         </Section>
@@ -382,10 +398,16 @@ export default function TestSettingsPage() {
                                 <div className="animate-in slide-in-from-top-2 duration-300">
                                     <InputGroup 
                                         label="Test Price (₹)"
-                                        type="number"
-                                        min="0"
+                                        icon={<DollarSign className="w-4 h-4" />}
+                                        type="text"
                                         value={formData.price}
-                                        onChange={e => setFormData({ ...formData, price: Math.max(0, parseFloat(e.target.value) || 0) })}
+                                        onChange={e => {
+                                            const val = e.target.value.replace(/[^0-9.]/g, '');
+                                            if ((val.match(/\./g) || []).length <= 1) {
+                                                setFormData({ ...formData, price: val });
+                                            }
+                                        }}
+                                        placeholder="0.00"
                                     />
                                 </div>
                             )}
@@ -473,16 +495,33 @@ function Section({ title, icon, children }: { title: string, icon: React.ReactNo
     )
 }
 
-function InputGroup({ label, ...props }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+function InputGroup({ label, icon, ...props }: { label: string, icon?: React.ReactNode } & React.InputHTMLAttributes<HTMLInputElement>) {
     return (
         <div className="space-y-3 group/input">
             <div className="flex items-center justify-between ml-1">
                 <label className="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.2em] group-focus-within/input:text-primary transition-colors">{label}</label>
             </div>
-            <input 
-                {...props}
-                className="w-full px-5 py-3.5 md:px-6 md:py-4 bg-slate-50 border-2 border-slate-100 rounded-xl md:rounded-2xl outline-none focus:border-primary/20 focus:ring-8 focus:ring-primary/5 transition-all duration-300 font-bold text-[#0f172a] placeholder:text-slate-300 hover:bg-white"
-            />
+            <div className="relative flex items-center group/field">
+                {icon && (
+                    <div className="absolute left-5 text-slate-400 group-focus-within/field:text-primary transition-colors">
+                        {icon}
+                    </div>
+                )}
+                <input 
+                    {...props}
+                    className={`w-full ${icon ? 'pl-14' : 'px-6'} py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-primary/20 focus:ring-8 focus:ring-primary/5 transition-all duration-300 font-bold text-[#0f172a] placeholder:text-slate-300 hover:bg-white`}
+                    onKeyDown={(e) => {
+                        // Allow control keys
+                        const isControlKey = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter', 'Escape'].includes(e.key);
+                        const isNumber = /[0-9]/.test(e.key);
+                        const isDecimal = e.key === '.' && props.type === 'text';
+
+                        if (!isNumber && !isControlKey && !isDecimal) {
+                            e.preventDefault();
+                        }
+                    }}
+                />
+            </div>
         </div>
     )
 }

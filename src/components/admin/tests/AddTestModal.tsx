@@ -23,15 +23,15 @@ export default function AddTestModal({
 }: AddTestModalProps) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [duration, setDuration] = useState(60)
-  const [targetQuestions, setTargetQuestions] = useState(30)
-  const [passPercentage, setPassPercentage] = useState(40)
-  const [attemptsAllowed, setAttemptsAllowed] = useState(1)
-  const [marksPerQuestion, setMarksPerQuestion] = useState(1)
-  const [negativeMarks, setNegativeMarks] = useState(0)
+  const [duration, setDuration] = useState<any>(60)
+  const [targetQuestions, setTargetQuestions] = useState<any>(30)
+  const [passPercentage, setPassPercentage] = useState<any>(40)
+  const [attemptsAllowed, setAttemptsAllowed] = useState<any>(1)
+  const [marksPerQuestion, setMarksPerQuestion] = useState<any>(1)
+  const [negativeMarks, setNegativeMarks] = useState<any>(0)
   const [testType, setTestType] = useState<'short' | 'full'>('full')
   const [isPaid, setIsPaid] = useState(false)
-  const [price, setPrice] = useState(0)
+  const [price, setPrice] = useState<any>(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -59,15 +59,15 @@ export default function AddTestModal({
         title, 
         description,
         moduleId, 
-        duration, 
-        passPercentage,
-        targetQuestions,
-        attemptsAllowed,
+        duration: parseInt(duration) || 0, 
+        passPercentage: parseInt(passPercentage) || 0,
+        targetQuestions: parseInt(targetQuestions) || 0,
+        attemptsAllowed: parseInt(attemptsAllowed) || 0,
         testType,
         isPaid,
-        price: isPaid ? price : 0,
-        marksPerQuestion,
-        negativeMarks
+        price: isPaid ? (parseFloat(price) || 0) : 0,
+        marksPerQuestion: parseFloat(marksPerQuestion) || 0,
+        negativeMarks: parseFloat(negativeMarks) || 0
       })
       if (result.error) {
         setError(result.error)
@@ -168,10 +168,14 @@ export default function AddTestModal({
                     <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                     <input
                         required
-                        type="number"
+                        type="text"
                         value={duration}
-                        onChange={(e) => setDuration(parseInt(e.target.value) || 0)}
-                        min="1"
+                        onChange={(e) => setDuration(e.target.value.replace(/[^0-9]/g, ''))}
+                        onKeyDown={(e) => {
+                            if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
+                                e.preventDefault();
+                            }
+                        }}
                         className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-bold"
                     />
                 </div>
@@ -182,10 +186,14 @@ export default function AddTestModal({
                     <Layers className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                     <input
                         required
-                        type="number"
+                        type="text"
                         value={targetQuestions}
-                        onChange={(e) => setTargetQuestions(parseInt(e.target.value) || 0)}
-                        min="1"
+                        onChange={(e) => setTargetQuestions(e.target.value.replace(/[^0-9]/g, ''))}
+                        onKeyDown={(e) => {
+                            if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
+                                e.preventDefault();
+                            }
+                        }}
                         className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-bold"
                     />
                 </div>
@@ -199,11 +207,17 @@ export default function AddTestModal({
                     <CheckCircle2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                     <input
                         required
-                        type="number"
+                        type="text"
                         value={passPercentage}
-                        onChange={(e) => setPassPercentage(parseInt(e.target.value) || 0)}
-                        min="0"
-                        max="100"
+                        onChange={(e) => {
+                            const val = e.target.value.replace(/[^0-9]/g, '');
+                            setPassPercentage(Math.min(100, parseInt(val) || 0));
+                        }}
+                        onKeyDown={(e) => {
+                            if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
+                                e.preventDefault();
+                            }
+                        }}
                         className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-bold"
                     />
                 </div>
@@ -214,10 +228,14 @@ export default function AddTestModal({
                     <Layers className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                     <input
                         required
-                        type="number"
+                        type="text"
                         value={attemptsAllowed}
-                        onChange={(e) => setAttemptsAllowed(parseInt(e.target.value) || 0)}
-                        min="1"
+                        onChange={(e) => setAttemptsAllowed(e.target.value.replace(/[^0-9]/g, ''))}
+                        onKeyDown={(e) => {
+                            if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
+                                e.preventDefault();
+                            }
+                        }}
                         className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-bold"
                     />
                 </div>
@@ -231,11 +249,19 @@ export default function AddTestModal({
                     <CheckCircle2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                     <input
                         required
-                        type="number"
-                        step="0.1"
+                        type="text"
                         value={marksPerQuestion}
-                        onChange={(e) => setMarksPerQuestion(parseFloat(e.target.value) || 0)}
-                        min="0"
+                        onChange={(e) => {
+                            const val = e.target.value.replace(/[^0-9.]/g, '');
+                            if ((val.match(/\./g) || []).length <= 1) {
+                                setMarksPerQuestion(val);
+                            }
+                        }}
+                        onKeyDown={(e) => {
+                            if (!/[0-9.]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
+                                e.preventDefault();
+                            }
+                        }}
                         className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-bold"
                     />
                 </div>
@@ -246,11 +272,19 @@ export default function AddTestModal({
                     <X className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                     <input
                         required
-                        type="number"
-                        step="0.1"
+                        type="text"
                         value={negativeMarks}
-                        onChange={(e) => setNegativeMarks(parseFloat(e.target.value) || 0)}
-                        min="0"
+                        onChange={(e) => {
+                            const val = e.target.value.replace(/[^0-9.]/g, '');
+                            if ((val.match(/\./g) || []).length <= 1) {
+                                setNegativeMarks(val);
+                            }
+                        }}
+                        onKeyDown={(e) => {
+                            if (!/[0-9.]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
+                                e.preventDefault();
+                            }
+                        }}
                         className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-bold"
                     />
                 </div>

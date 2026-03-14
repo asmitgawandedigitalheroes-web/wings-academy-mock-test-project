@@ -39,7 +39,7 @@ export default function SettingsPage() {
   const [flushMessage, setFlushMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
   // Form State
-  const [settings, setSettings] = useState({
+  const [settings, setSettings] = useState<any>({
     platform_name: '',
     support_email: '',
     support_phone: '',
@@ -87,7 +87,10 @@ export default function SettingsPage() {
   const handleSave = async () => {
     try {
       setIsSaving(true)
-      const res = await updatePlatformSettings(settings)
+      const res = await updatePlatformSettings({
+          ...settings,
+          default_test_price: parseInt(settings.default_test_price as any) || 0
+      })
       if (res.success) {
         // Show success state
       } else {
@@ -329,9 +332,9 @@ export default function SettingsPage() {
                     <div className="space-y-2">
                         <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Default Paid Test Price (₹)</label>
                         <input 
-                            type="number" 
+                            type="text" 
                             value={settings.default_test_price}
-                            onChange={(e) => setSettings({ ...settings, default_test_price: parseInt(e.target.value) || 0 })}
+                            onChange={(e) => setSettings({ ...settings, default_test_price: e.target.value.replace(/[^0-9]/g, '') })}
                             className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 transition-all font-bold" 
                         />
                     </div>

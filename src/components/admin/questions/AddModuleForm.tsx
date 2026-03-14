@@ -16,8 +16,8 @@ export default function AddModuleForm({ categories, onSuccess, onCancel }: Modul
   const [categoryId, setCategoryId] = useState('')
   const [moduleCode, setModuleCode] = useState('')
   const [description, setDescription] = useState('')
-  const [freeLimit, setFreeLimit] = useState(2)
-  const [paidLimit, setPaidLimit] = useState(3)
+  const [freeLimit, setFreeLimit] = useState<any>(2)
+  const [paidLimit, setPaidLimit] = useState<any>(3)
   const [status, setStatus] = useState('Active')
   const [loading, setLoading] = useState(false)
   
@@ -46,8 +46,8 @@ export default function AddModuleForm({ categories, onSuccess, onCancel }: Modul
       categoryId,
       code: moduleCode,
       description,
-      free_test_limit: freeLimit,
-      paid_test_limit: paidLimit,
+      free_test_limit: parseInt(freeLimit) || 0,
+      paid_test_limit: parseInt(paidLimit) || 0,
       status
     })
 
@@ -141,10 +141,14 @@ export default function AddModuleForm({ categories, onSuccess, onCancel }: Modul
           <div className="space-y-2">
             <label className="block text-[0.65rem] font-black text-slate-400 uppercase tracking-widest ml-1">Free Test Limit</label>
             <input
-              type="number"
-              min="0"
+              type="text"
               value={freeLimit}
-              onChange={(e) => setFreeLimit(parseInt(e.target.value) || 0)}
+              onChange={(e) => setFreeLimit(e.target.value.replace(/[^0-9]/g, ''))}
+              onKeyDown={(e) => {
+                  if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
+                      e.preventDefault();
+                  }
+              }}
               className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all font-bold text-[#0f172a]"
             />
           </div>
@@ -152,10 +156,14 @@ export default function AddModuleForm({ categories, onSuccess, onCancel }: Modul
           <div className="space-y-2">
             <label className="block text-[0.65rem] font-black text-slate-400 uppercase tracking-widest ml-1">Paid Test Limit</label>
             <input
-              type="number"
-              min="0"
+              type="text"
               value={paidLimit}
-              onChange={(e) => setPaidLimit(parseInt(e.target.value) || 0)}
+              onChange={(e) => setPaidLimit(e.target.value.replace(/[^0-9]/g, ''))}
+              onKeyDown={(e) => {
+                  if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
+                      e.preventDefault();
+                  }
+              }}
               className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all font-bold text-[#0f172a]"
             />
           </div>

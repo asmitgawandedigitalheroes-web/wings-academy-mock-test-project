@@ -135,7 +135,7 @@ export default function EditQuestionPage() {
         correct_options: correctOptions,
         difficulty_level: difficulty,
         explanation,
-        marks,
+        marks: parseFloat(marks as any) || 0,
         image_url: imageUrl
       })
 
@@ -340,11 +340,14 @@ export default function EditQuestionPage() {
                   <Star className="w-4 h-4" />
                 </div>
                 <input
-                  type="number"
-                  min="0"
-                  step="0.5"
+                  type="text"
                   value={marks}
-                  onChange={(e) => setMarks(Math.max(0, parseFloat(e.target.value) || 0))}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^0-9.]/g, '');
+                    if ((val.match(/\./g) || []).length <= 1) {
+                        setMarks(val as any);
+                    }
+                  }}
                   className="w-full pl-14 pr-6 py-4 bg-slate-50/50 border-2 border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary/20 transition-all font-bold text-[#0f172a] hover:bg-white"
                 />
               </div>

@@ -270,6 +270,7 @@ export default function ModuleManager() {
                         >
                             <Link 
                                 href={`/admin/modules/${module.id}/settings`}
+                                replace
                                 className="flex items-center gap-3 px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors"
                             >
                                 <Settings className="w-4 h-4" />

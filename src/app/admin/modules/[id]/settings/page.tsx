@@ -29,7 +29,7 @@ export default function ModuleSettingsPage() {
     const [categories, setCategories] = useState<{ id: string, name: string }[]>([])
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<any>({
         name: '',
         code: '',
         category_id: '' as string | null,
@@ -75,10 +75,16 @@ export default function ModuleSettingsPage() {
         e.preventDefault()
         setSaving(true)
         const dbStatus = formData.status === 'published' ? 'enabled' : formData.status === 'draft' ? 'disabled' : formData.status
-        const res = await updateModuleSettings(id, { ...formData, status: dbStatus } as any)
+        const res = await updateModuleSettings(id, { 
+            ...formData, 
+            status: dbStatus,
+            free_tests_limit: parseInt(formData.free_tests_limit) || 0,
+            paid_tests_limit: parseInt(formData.paid_tests_limit) || 0,
+            price: parseFloat(formData.price) || 0
+        } as any)
         setSaving(false)
         if (res.success) {
-            router.push(`/admin/modules/${id}`)
+            router.replace(`/admin/modules/${id}`)
         } else {
             alert(res.error || 'Failed to save settings')
         }
@@ -99,6 +105,7 @@ export default function ModuleSettingsPage() {
             <div className="flex flex-col gap-4">
                 <Link 
                     href={`/admin/modules/${id}`}
+                    replace
                     className="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors font-bold text-sm"
                 >
                     <ChevronLeft className="w-4 h-4" />
@@ -181,24 +188,20 @@ export default function ModuleSettingsPage() {
                     {/* Test Limits */}
                     <Section title="Test Limits" icon={<BarChart3 className="w-5 h-5" />}>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            <div>
-                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Free Tests Limit</label>
-                                <input 
-                                    min="0"
-                                    value={formData.free_tests_limit}
-                                    onChange={e => setFormData({ ...formData, free_tests_limit: Math.max(0, parseInt(e.target.value) || 0) })}
-                                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all font-bold text-[#0f172a]"
-                                />
-                            </div>
-                            <div>
-                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Paid Tests Limit</label>
-                                <input 
-                                    min="0"
-                                    value={formData.paid_tests_limit}
-                                    onChange={e => setFormData({ ...formData, paid_tests_limit: Math.max(0, parseInt(e.target.value) || 0) })}
-                                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all font-bold text-[#0f172a]"
-                                />
-                            </div>
+                            <InputGroup 
+                                label="Free Tests Limit"
+                                icon={<BarChart3 className="w-4 h-4" />}
+                                type="text"
+                                value={formData.free_tests_limit}
+                                onChange={e => setFormData({ ...formData, free_tests_limit: e.target.value.replace(/[^0-9]/g, '') })}
+                            />
+                            <InputGroup 
+                                label="Paid Tests Limit"
+                                icon={<BarChart3 className="w-4 h-4" />}
+                                type="text"
+                                value={formData.paid_tests_limit}
+                                onChange={e => setFormData({ ...formData, paid_tests_limit: e.target.value.replace(/[^0-9]/g, '') })}
+                            />
                         </div>
                     </Section>
 
@@ -228,10 +231,15 @@ export default function ModuleSettingsPage() {
                             {formData.enable_purchase && (
                                     <InputGroup 
                                         label="Module Price (₹)"
-                                        type="number"
-                                        min="0"
+                                        icon={<CreditCard className="w-4 h-4" />}
+                                        type="text"
                                         value={formData.price}
-                                        onChange={e => setFormData({ ...formData, price: Math.max(0, parseFloat(e.target.value) || 0) })}
+                                        onChange={e => {
+                                            const val = e.target.value.replace(/[^0-9.]/g, '');
+                                            if ((val.match(/\./g) || []).length <= 1) {
+                                                setFormData({ ...formData, price: val });
+                                            }
+                                        }}
                                         placeholder="0.00"
                                     />
                             )}
@@ -315,17 +323,33 @@ function Section({ title, icon, children }: { title: string, icon: React.ReactNo
     )
 }
 
-function InputGroup({ label, ...props }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+function InputGroup({ label, icon, ...props }: { label: string, icon?: React.ReactNode } & React.InputHTMLAttributes<HTMLInputElement>) {
     return (
         <div className="space-y-3 group/input">
             <div className="flex items-center justify-between ml-1">
                 <label className="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.2em] group-focus-within/input:text-primary transition-colors">{label}</label>
                 {props.required && <span className="text-[10px] font-black text-primary/40 uppercase">Required</span>}
             </div>
-            <input 
-                {...props}
-                className="w-full px-5 py-3.5 md:px-6 md:py-4 bg-slate-50 border-2 border-slate-100 rounded-xl md:rounded-2xl outline-none focus:border-primary/20 focus:ring-8 focus:ring-primary/5 transition-all duration-300 font-bold text-[#0f172a] placeholder:text-slate-300 hover:bg-white"
-            />
+            <div className="relative flex items-center group/field">
+                {icon && (
+                    <div className="absolute left-5 text-slate-400 group-focus-within/field:text-primary transition-colors">
+                        {icon}
+                    </div>
+                )}
+                <input 
+                    {...props}
+                    className={`w-full ${icon ? 'pl-14' : 'px-6'} py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-primary/20 focus:ring-8 focus:ring-primary/5 transition-all duration-300 font-bold text-[#0f172a] placeholder:text-slate-300 hover:bg-white`}
+                    onKeyDown={(e) => {
+                        const isControlKey = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter', 'Escape'].includes(e.key);
+                        const isNumber = /[0-9]/.test(e.key);
+                        const isDecimal = e.key === '.' && props.type === 'text';
+
+                        if (!isNumber && !isControlKey && !isDecimal) {
+                            e.preventDefault();
+                        }
+                    }}
+                />
+            </div>
         </div>
     )
 }

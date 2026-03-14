@@ -98,6 +98,7 @@ export default function ModuleDetailPage() {
           <div className="flex items-center gap-4">
             <Link 
               href={`/admin/modules/${id}/settings`}
+              replace
               className="p-4 bg-white shadow-xl shadow-primary/5 rounded-2xl text-slate-400 hover:text-primary transition-all hover:scale-105 border border-slate-50"
               title="Module Settings"
             >
@@ -115,7 +116,7 @@ export default function ModuleDetailPage() {
       </div>
 
       {/* Dashboard Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
         <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
           <p className="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest mb-1">Total Tests</p>
           <p className="text-2xl font-black text-[#0f172a]">{tests.length}</p>
@@ -125,10 +126,14 @@ export default function ModuleDetailPage() {
           <p className="text-2xl font-black text-[#0f172a]">{tests.reduce((acc, test) => acc + (test.question_count || 0), 0)}</p>
         </div>
         <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+          <p className="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest mb-1">Total Time</p>
+          <p className="text-2xl font-black text-[#0f172a]">{tests.reduce((acc, test) => acc + (test.time_limit_minutes || 0), 0)} <span className="text-sm text-slate-400">Mins</span></p>
+        </div>
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
           <p className="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest mb-1">Students Taken</p>
           <p className="text-2xl font-black text-primary">{tests.reduce((acc, test) => acc + (test.taken || 0), 0)}</p>
         </div>
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex justify-between items-center group">
+        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex justify-between items-center group sm:col-span-2 lg:col-span-1">
           <div>
             <p className="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p>
             <div className="flex items-center gap-2">

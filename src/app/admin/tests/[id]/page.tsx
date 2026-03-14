@@ -253,6 +253,7 @@ export default function TestQuestionsPage() {
 
                   <Link
                     href={`/admin/tests/${id}/settings`}
+                    replace
                     className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary/60 hover:text-primary font-black text-xs uppercase tracking-widest transition-all"
                   >
                     <Settings className="w-3 h-3" />
@@ -354,6 +355,7 @@ export default function TestQuestionsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <Link 
           href={`/admin/tests/${id}/settings`}
+          replace
           className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-xl shadow-primary/5 hover:border-primary/20 hover:shadow-primary/10 transition-all group flex items-center gap-4"
         >
           <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all text-primary">
@@ -367,6 +369,7 @@ export default function TestQuestionsPage() {
 
         <Link 
           href={`/admin/tests/${id}/settings`}
+          replace
           className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-xl shadow-primary/5 hover:border-primary/20 hover:shadow-primary/10 transition-all group flex items-center gap-4"
         >
           <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white transition-all text-amber-500">
@@ -380,6 +383,7 @@ export default function TestQuestionsPage() {
 
         <Link 
           href={`/admin/tests/${id}/settings`}
+          replace
           className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-xl shadow-primary/5 hover:border-primary/20 hover:shadow-primary/10 transition-all group flex items-center gap-4"
         >
           <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center group-hover:bg-green-500 group-hover:text-white transition-all text-green-500">
@@ -393,6 +397,7 @@ export default function TestQuestionsPage() {
 
         <Link 
           href={`/admin/tests/${id}/settings`}
+          replace
           className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-xl shadow-primary/5 hover:border-primary/20 hover:shadow-primary/10 transition-all group flex items-center gap-4"
         >
           <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center group-hover:bg-purple-500 group-hover:text-white transition-all text-purple-500">
