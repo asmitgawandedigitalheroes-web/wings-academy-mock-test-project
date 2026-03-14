@@ -17,11 +17,11 @@ import Link from 'next/link'
 
 interface TestCardActionsProps {
   test: any
-  subjectId: string
+  moduleId: string
   onRefresh: () => void
 }
 
-export default function TestCardActions({ test, subjectId, onRefresh }: TestCardActionsProps) {
+export default function TestCardActions({ test, moduleId, onRefresh }: TestCardActionsProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [modalConfig, setModalConfig] = useState<{
@@ -55,7 +55,7 @@ export default function TestCardActions({ test, subjectId, onRefresh }: TestCard
 
   const handleToggleStatus = async () => {
     setLoading(true)
-    const res = await toggleTestStatus(test.id, subjectId, test.status || 'draft')
+    const res = await toggleTestStatus(test.id, moduleId, test.status || 'draft')
     if (res.error) {
       setModalConfig({
         isOpen: true,
@@ -82,7 +82,7 @@ export default function TestCardActions({ test, subjectId, onRefresh }: TestCard
         confirmLabel: 'Make Free',
         onConfirm: async () => {
           setLoading(true)
-          const res = await toggleTestPaid(test.id, subjectId, true, 0)
+          const res = await toggleTestPaid(test.id, moduleId, true, 0)
           if (res.error) {
             setModalConfig({
               isOpen: true,
@@ -111,7 +111,7 @@ export default function TestCardActions({ test, subjectId, onRefresh }: TestCard
         onConfirm: async (val) => {
           const price = parseFloat(val || '0')
           setLoading(true)
-          const res = await toggleTestPaid(test.id, subjectId, false, price)
+          const res = await toggleTestPaid(test.id, moduleId, false, price)
           if (res.error) {
             setModalConfig({
               isOpen: true,
@@ -141,7 +141,7 @@ export default function TestCardActions({ test, subjectId, onRefresh }: TestCard
       confirmLabel: 'Delete Permanently',
       onConfirm: async () => {
         setLoading(true)
-        const res = await deleteTestSet(test.id, subjectId)
+        const res = await deleteTestSet(test.id, moduleId)
         if (res.error) {
           setModalConfig({
             isOpen: true,

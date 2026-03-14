@@ -7,7 +7,7 @@ const Features = () => {
     { icon: <Clock className="w-5 h-5 text-primary" />, title: 'Timed Mock Exams', description: 'Experience real pressure with our timed simulation.' },
     { icon: <CheckSquare className="w-5 h-5 text-primary" />, title: 'Exam Pattern', description: 'Questions matched to recent EASA, GCAA, and DGCA patterns.' },
     { icon: <BarChart2 className="w-5 h-5 text-primary" />, title: 'Instant Report', description: 'Get your scores and deep-dive performance analysis immediately.' },
-    { icon: <BookOpen className="w-5 h-5 text-primary" />, title: 'Subject Practice', description: 'Focus your preparation on specific modules.' },
+    { icon: <BookOpen className="w-5 h-5 text-primary" />, title: 'Module Practice', description: 'Focus your preparation on specific syllabus modules.' },
     { icon: <Smartphone className="w-5 h-5 text-primary" />, title: 'Accessible', description: 'Prepare on laptop, tablet, or phone. Sync progress.' },
     { icon: <ShieldCheck className="w-5 h-5 text-primary" />, title: 'Tailored for AME', description: 'Designed exclusively for Aircraft Maintenance Engineering students.' },
   ]

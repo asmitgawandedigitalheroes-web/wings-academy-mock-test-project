@@ -20,7 +20,7 @@ import { signout } from '@/app/actions/auth'
 
 const navItems = [
   { name: 'Dashboard', icon: LayoutGrid, href: '/dashboard' },
-  { name: 'Subjects', icon: Library, href: '/dashboard/subjects' },
+  { name: 'Modules', icon: Library, href: '/dashboard/modules' },
   { name: 'My Tests', icon: ClipboardList, href: '/dashboard/my-tests' },
   { name: 'Progress', icon: BarChart3, href: '/dashboard/progress' },
   { name: 'Results', icon: Award, href: '/dashboard/results' },

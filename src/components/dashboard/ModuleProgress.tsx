@@ -3,11 +3,11 @@
 import React from 'react'
 import { Library } from 'lucide-react'
 
-interface SubjectProgressProps {
+interface ModuleProgressProps {
   data: any[]
 }
 
-export default function SubjectProgress({ data }: SubjectProgressProps) {
+export default function ModuleProgress({ data }: ModuleProgressProps) {
   return (
     <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-primary/5 space-y-6">
       <h3 className="text-xl font-black text-[#0f172a]">Learning Progress</h3>
@@ -18,7 +18,7 @@ export default function SubjectProgress({ data }: SubjectProgressProps) {
             <Library className="w-8 h-8" />
           </div>
           <div className="space-y-1">
-            <p className="font-black text-[#0f172a]">No subjects enrolled yet</p>
+            <p className="font-black text-[#0f172a]">No modules enrolled yet</p>
             <p className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest">Enroll in a course to track progress</p>
           </div>
         </div>

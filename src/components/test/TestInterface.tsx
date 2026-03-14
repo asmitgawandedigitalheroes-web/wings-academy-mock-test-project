@@ -30,7 +30,7 @@ export default function TestInterface({ test }: TestInterfaceProps) {
   const router = useRouter()
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0)
-  const [answers, setAnswers] = useState<Record<string, number>>({})
+  const [answers, setAnswers] = useState<Record<string, number | number[]>>({})
   const [flaggedQuestions, setFlaggedQuestions] = useState<Set<string>>(new Set())
   const [timeLeft, setTimeLeft] = useState(test.time_limit_minutes * 60)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -159,11 +159,13 @@ export default function TestInterface({ test }: TestInterfaceProps) {
           // Load progress if existing
           const progress = await getSessionProgress(res.sessionId)
           if (progress.answers) {
-            const loadedAnswers: Record<string, number> = {}
+            const loadedAnswers: Record<string, number | number[]> = {}
             const loadedFlagged = new Set<string>()
 
             progress.answers.forEach((a: any) => {
-              if (a.selected_option_index !== null && a.selected_option_index !== -1) {
+              if (a.selected_options && a.selected_options.length > 0) {
+                loadedAnswers[a.question_id] = a.selected_options
+              } else if (a.selected_option_index !== null && a.selected_option_index !== -1) {
                 loadedAnswers[a.question_id] = a.selected_option_index
               }
               if (a.is_flagged) {
@@ -318,7 +320,7 @@ export default function TestInterface({ test }: TestInterfaceProps) {
   }, [timeLeft, handleSubmit, isExamStarted])
 
   // Auto-save logic
-  const saveProgress = useCallback(async (qId: string, selection: number | null, flagged: boolean) => {
+  const saveProgress = useCallback(async (qId: string, selection: number | number[] | null, flagged: boolean) => {
     if (!sessionId) return
     await updateTestProgress(sessionId, qId, selection, flagged)
   }, [sessionId])
@@ -343,11 +345,30 @@ export default function TestInterface({ test }: TestInterfaceProps) {
   }
 
   const handleOptionSelect = (optionIdx: number) => {
-    setAnswers(prev => ({
-      ...prev,
-      [currentQuestion.id]: optionIdx
-    }))
-    saveProgress(currentQuestion.id, optionIdx, flaggedQuestions.has(currentQuestion.id))
+    const isMultiple = currentQuestion.question_type === 'multiple'
+    
+    setAnswers(prev => {
+      let newSelection: number | number[] | null = null
+      
+      if (isMultiple) {
+        const current = (prev[currentQuestion.id] as number[]) || []
+        if (current.includes(optionIdx)) {
+          newSelection = current.filter(id => id !== optionIdx)
+        } else {
+          newSelection = [...current, optionIdx]
+        }
+      } else {
+        newSelection = optionIdx
+      }
+
+      const next = {
+        ...prev,
+        [currentQuestion.id]: newSelection as any // cast for record safety
+      }
+
+      saveProgress(currentQuestion.id, newSelection, flaggedQuestions.has(currentQuestion.id))
+      return next
+    })
   }
 
   const toggleFlag = () => {
@@ -385,7 +406,7 @@ export default function TestInterface({ test }: TestInterfaceProps) {
           <button
             onClick={() => {
               sessionStorage.removeItem(`test_session_${test.id}`)
-              router.push('/dashboard/subjects')
+              router.push('/dashboard/modules')
             }}
             className="flex items-center gap-2 text-slate-400 hover:text-primary font-black text-[0.65rem] uppercase tracking-[0.2em] transition-all group"
           >
@@ -519,7 +540,7 @@ export default function TestInterface({ test }: TestInterfaceProps) {
           <div className="space-y-1">
             <h1 className="text-2xl font-black text-[#0f172a]">{test.title}</h1>
             <div className="flex items-center gap-4 text-slate-400 font-bold text-xs uppercase tracking-widest">
-              <span>Subject: {test.subject_name || 'General'}</span>
+              <span>Module: {test.module_name || 'General'}</span>
               <span>•</span>
               <span>{questions.length} Questions</span>
             </div>
@@ -576,32 +597,53 @@ export default function TestInterface({ test }: TestInterfaceProps) {
               </div>
 
               <div className="flex-1 space-y-10">
-                <h2 className="text-2xl font-bold text-[#0f172a] leading-relaxed select-none first-letter:uppercase">
-                  {currentQuestion?.question_text}
-                </h2>
+                <div className="space-y-3">
+                  {currentQuestion?.question_type === 'multiple' && (
+                    <span className="px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-full text-[0.55rem] font-black uppercase tracking-widest inline-block">
+                      Multiple Choice
+                    </span>
+                  )}
+                  <h2 className="text-2xl font-bold text-[#0f172a] leading-relaxed select-none first-letter:uppercase">
+                    {currentQuestion?.question_text}
+                  </h2>
+                </div>
 
                 <div className="grid grid-cols-1 gap-4">
-                  {currentQuestion?.options?.map((option: string, idx: number) => (
-                    <button
-                      key={idx}
-                      onClick={() => handleOptionSelect(idx)}
-                      className={`p-6 rounded-[1.5rem] text-left transition-all flex items-center gap-6 group border ${answers[currentQuestion.id] === idx
-                        ? 'bg-primary/5 border-primary shadow-lg shadow-primary/5 ring-1 ring-primary'
-                        : 'bg-slate-50 border-slate-100 hover:border-primary/20 hover:bg-white'
-                        }`}
-                    >
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 transition-colors ${answers[currentQuestion.id] === idx
-                        ? 'bg-primary text-white'
-                        : 'bg-white border border-slate-100 text-slate-400 group-hover:text-primary group-hover:border-primary/20'
-                        }`}>
-                        {String.fromCharCode(65 + idx)}
-                      </div>
-                      <span className={`font-bold text-base leading-tight ${answers[currentQuestion.id] === idx ? 'text-primary' : 'text-[#0f172a]'
-                        }`}>
-                        {option}
-                      </span>
-                    </button>
-                  ))}
+                  {currentQuestion?.options?.map((option: any, idx: number) => {
+                    const optionText = typeof option === 'string' ? option : option.text
+                    const optionIdx = typeof option === 'string' ? idx : option.index
+                    
+                    const currentSelection = answers[currentQuestion.id]
+                    const isSelected = Array.isArray(currentSelection) 
+                       ? currentSelection.includes(optionIdx)
+                       : currentSelection === optionIdx
+
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => handleOptionSelect(optionIdx)}
+                        className={`p-6 rounded-[1.5rem] text-left transition-all flex items-center gap-6 group border ${isSelected
+                          ? 'bg-primary/5 border-primary shadow-lg shadow-primary/5 ring-1 ring-primary'
+                          : 'bg-slate-50 border-slate-100 hover:border-primary/20 hover:bg-white'
+                          }`}
+                      >
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 transition-colors ${isSelected
+                          ? 'bg-primary text-white'
+                          : 'bg-white border border-slate-100 text-slate-400 group-hover:text-primary group-hover:border-primary/20'
+                          }`}>
+                          {currentQuestion.question_type === 'multiple' ? (
+                            <div className={`w-4 h-4 rounded-sm border-2 ${isSelected ? 'border-none bg-white/20' : 'border-slate-200'} flex items-center justify-center`}>
+                               {isSelected && <CheckCircle2 className="w-4 h-4 text-white" />}
+                            </div>
+                          ) : String.fromCharCode(65 + idx)}
+                        </div>
+                        <span className={`font-bold text-base leading-tight ${isSelected ? 'text-primary' : 'text-[#0f172a]'
+                          }`}>
+                          {optionText}
+                        </span>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 

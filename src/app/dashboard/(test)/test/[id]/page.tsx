@@ -12,7 +12,7 @@ export default async function TestPage({ params }: PageProps) {
   const test = await getTestData(id)
 
   if (!test) {
-    redirect('/dashboard/subjects')
+    redirect('/dashboard/modules')
   }
 
   return (

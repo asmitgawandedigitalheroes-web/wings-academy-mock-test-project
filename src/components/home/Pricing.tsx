@@ -22,7 +22,7 @@ const Pricing = () => {
             <ul className="space-y-4 mb-10 flex-grow text-left max-w-xs mx-auto">
               <li className="flex items-center gap-3 text-slate-700">
                 <Check className="w-5 h-5 text-green-600" />
-                <span>2 free tests per subject</span>
+                <span>2 free tests per module</span>
               </li>
               <li className="flex items-center gap-3 text-slate-700">
                 <Check className="w-5 h-5 text-green-600" />
@@ -56,7 +56,7 @@ const Pricing = () => {
             <ul className="space-y-4 mb-10 flex-grow text-left max-w-xs mx-auto">
                <li className="flex items-center gap-3">
                 <Check className="w-5 h-5 text-cyan-400" />
-                <span>3+ advanced tests per subject</span>
+                <span>3+ advanced tests per module</span>
               </li>
               <li className="flex items-center gap-3">
                 <Check className="w-5 h-5 text-cyan-400" />

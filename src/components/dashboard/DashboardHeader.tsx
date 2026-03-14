@@ -24,7 +24,7 @@ export default function DashboardHeader({
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearching, setIsSearching] = useState(false)
-  const [results, setResults] = useState<{ subjects: any[], tests: any[] }>({ subjects: [], tests: [] })
+  const [results, setResults] = useState<{ modules: any[], tests: any[] }>({ modules: [], tests: [] })
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -41,7 +41,7 @@ export default function DashboardHeader({
   useEffect(() => {
     const fetchResults = async () => {
       if (!searchQuery.trim()) {
-        setResults({ subjects: [], tests: [] })
+        setResults({ modules: [], tests: [] })
         setIsDropdownOpen(false)
         return
       }
@@ -87,7 +87,7 @@ export default function DashboardHeader({
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-primary transition-colors" />
             <input
               type="text"
-              placeholder="Search for tests, subjects, or questions..."
+              placeholder="Search for tests, modules, or questions..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => { if (searchQuery.trim()) setIsDropdownOpen(true) }}
@@ -102,27 +102,27 @@ export default function DashboardHeader({
                   <div className="p-8 flex items-center justify-center">
                     <div className="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin"></div>
                   </div>
-                ) : results.subjects.length === 0 && results.tests.length === 0 ? (
+                ) : results.modules.length === 0 && results.tests.length === 0 ? (
                   <div className="p-8 text-center text-slate-500 font-medium">
                     No results found for "<span className="text-primary font-bold">{searchQuery}</span>"
                   </div>
                 ) : (
                   <div className="overflow-y-auto p-2">
-                    {results.subjects.length > 0 && (
+                    {results.modules.length > 0 && (
                       <div className="mb-2">
                         <div className="px-3 py-2 text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                          <Database className="w-3 h-3" /> Subjects
+                          <Database className="w-3 h-3" /> Modules
                         </div>
-                        {results.subjects.map(subject => (
+                        {results.modules.map(module => (
                           <Link
-                            href={`/dashboard/subjects/${subject.id}`}
-                            key={subject.id}
+                            href={`/dashboard/modules/${module.id}`}
+                            key={module.id}
                             onClick={() => setIsDropdownOpen(false)}
                             className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl transition-colors group"
                           >
                             <div>
-                              <p className="font-bold text-[#0f172a] group-hover:text-primary transition-colors">{subject.name}</p>
-                              <p className="text-xs text-slate-500 line-clamp-1">{subject.description || 'No description'}</p>
+                              <p className="font-bold text-[#0f172a] group-hover:text-primary transition-colors">{module.name}</p>
+                              <p className="text-xs text-slate-500 line-clamp-1">{module.description || 'No description'}</p>
                             </div>
                             <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-primary group-hover:translate-x-1 transition-all" />
                           </Link>
@@ -137,7 +137,7 @@ export default function DashboardHeader({
                         </div>
                         {results.tests.map(test => (
                           <Link
-                            href={`/dashboard/subjects/${test.subject_id}?test=${test.id}`}
+                            href={`/dashboard/modules/${test.module_id}?test=${test.id}`}
                             key={test.id}
                             onClick={() => setIsDropdownOpen(false)}
                             className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl transition-colors group"

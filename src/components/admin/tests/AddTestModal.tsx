@@ -5,7 +5,7 @@ import { X, Clock, FileText, Layers, DollarSign, CheckCircle2 } from 'lucide-rea
 import { addTest } from '@/app/actions/admin'
 
 interface AddTestModalProps {
-  subjectId: string
+  moduleId: string
   existingTests: any[]
   freeLimit?: number
   paidLimit?: number
@@ -14,7 +14,7 @@ interface AddTestModalProps {
 }
 
 export default function AddTestModal({ 
-  subjectId, 
+  moduleId, 
   existingTests, 
   freeLimit = 2, 
   paidLimit = 3, 
@@ -43,11 +43,11 @@ export default function AddTestModal({
     
     // Enforce business rules
     if (!isPaid && freeCount >= freeLimit) {
-      setError(`Limit Reached: This subject is limited to ${freeLimit} Free Tests in settings.`)
+      setError(`Limit Reached: This module is limited to ${freeLimit} Free Tests in settings.`)
       return
     }
     if (isPaid && paidCount >= paidLimit) {
-      setError(`Limit Reached: This subject is limited to ${paidLimit} Paid Tests in settings.`)
+      setError(`Limit Reached: This module is limited to ${paidLimit} Paid Tests in settings.`)
       return
     }
 
@@ -58,7 +58,7 @@ export default function AddTestModal({
       const result = await addTest({ 
         title, 
         description,
-        subjectId, 
+        moduleId, 
         duration, 
         passPercentage,
         targetQuestions,
@@ -86,7 +86,7 @@ export default function AddTestModal({
       <div className="flex justify-between items-center mb-8">
         <div>
           <h2 className="text-2xl font-black text-[#0f172a] tracking-tight">Create New Test</h2>
-          <p className="text-slate-500 text-sm font-medium mt-1">Setup a mock exam for this subject.</p>
+          <p className="text-slate-500 text-sm font-medium mt-1">Setup a mock exam for this module.</p>
         </div>
         <button 
           onClick={onCancel}

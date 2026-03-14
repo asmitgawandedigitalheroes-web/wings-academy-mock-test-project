@@ -165,7 +165,7 @@ export default function EditQuestionPage() {
       {/* Breadcrumb */}
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-2 text-slate-400 font-bold text-sm">
-          <Link href="/admin/questions" className="hover:text-primary transition-colors">Subjects</Link>
+          <Link href="/admin/modules" className="hover:text-primary transition-colors">Modules</Link>
           <ChevronRight className="w-4 h-4 text-slate-300" />
           <Link href={`/admin/tests/${testId}`} className="hover:text-primary transition-colors capitalize">{test?.title}</Link>
           <ChevronRight className="w-4 h-4 text-slate-300" />

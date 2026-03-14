@@ -13,7 +13,8 @@ import {
   Ban,
   CheckCircle2,
   Trash2,
-  UserCircle
+  UserCircle,
+  Eye
 } from 'lucide-react'
 import { updateUserStatus, promoteUserToAdmin, deleteUser } from '@/app/actions/admin'
 import { createClient } from '@/utils/supabase/client'
@@ -61,6 +62,9 @@ export default function UserManagement() {
     const res = await updateUserStatus(userId, newStatus)
     if (res.success) {
       setUsers(users.map(u => u.id === userId ? { ...u, status: newStatus } : u))
+      alert(`User status updated to ${newStatus}`)
+    } else {
+      alert(res.error || 'Failed to update user status')
     }
   }
 
@@ -70,6 +74,9 @@ export default function UserManagement() {
     const res = await deleteUser(id)
     if (res.success) {
       setUsers(users.filter(u => u.id !== id))
+      alert('User deleted successfully')
+    } else {
+      alert(res.error || 'Failed to delete user')
     }
     setDeleteModal({ isOpen: false, id: '' })
   }
@@ -81,13 +88,13 @@ export default function UserManagement() {
           <h1 className="text-3xl font-black text-[#0f172a] tracking-tight">Student Management</h1>
           <p className="text-slate-500 font-medium mt-1">View and manage all registered student accounts.</p>
         </div>
-        <button
+        {/* <button
           onClick={() => setShowAddModal(true)}
           className="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-2xl font-black shadow-lg shadow-primary/20 hover:bg-[#152e75] transition-all shrink-0"
         >
           <UserPlus className="w-5 h-5" />
           Add New User
-        </button>
+        </button> */}
       </div>
 
       {/* Filters & Search */}
@@ -157,15 +164,22 @@ export default function UserManagement() {
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.7rem] font-black uppercase tracking-wider ${user.status === 'suspended'
-                          ? 'bg-red-100 text-red-700'
-                          : 'bg-green-100 text-green-700'
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-green-100 text-green-700'
                         }`}>
                         {user.status === 'suspended' ? <Ban className="w-3 h-3" /> : <CheckCircle2 className="w-3 h-3" />}
                         {user.status || 'active'}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-2 transition-opacity">
+                        <Link
+                          href={`/admin/users/${user.id}`}
+                          className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-all"
+                          title="View Details"
+                        >
+                          <Eye className="w-5 h-5" />
+                        </Link>
                         <button
                           onClick={() => handleStatusUpdate(user.id, user.status || 'active')}
                           className={`p-2 rounded-lg transition-all ${user.status === 'suspended' ? 'text-green-600 hover:bg-green-50' : 'text-amber-600 hover:bg-amber-50'}`}
@@ -228,6 +242,12 @@ export default function UserManagement() {
               <div className="flex items-center justify-between pt-4 border-t border-slate-50">
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Actions</p>
                 <div className="flex items-center gap-2">
+                  <Link
+                    href={`/admin/users/${user.id}`}
+                    className="p-2 bg-slate-50 text-slate-400 rounded-lg"
+                  >
+                    <Eye className="w-5 h-5" />
+                  </Link>
                   <button
                     onClick={() => handleStatusUpdate(user.id, user.status || 'active')}
                     className={`p-2 rounded-lg ${user.status === 'suspended' ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'}`}

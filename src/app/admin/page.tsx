@@ -31,8 +31,8 @@ export default async function AdminDashboard() {
       bg: 'bg-primary/5' 
     },
     { 
-      label: 'Total Subjects', 
-      value: dbStats.subjectCount.toLocaleString(), 
+      label: 'Total Modules', 
+      value: dbStats.moduleCount.toLocaleString(), 
       change: '+0%', 
       icon: <Layers className="w-6 h-6 text-primary" />,
       bg: 'bg-primary/5' 

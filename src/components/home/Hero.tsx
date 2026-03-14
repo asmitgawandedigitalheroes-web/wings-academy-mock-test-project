@@ -27,9 +27,9 @@ const Hero = () => {
                 Start Free Tests
                 <ArrowRight className="w-5 h-5" />
               </Link>
-              <Link href="#subjects" className="w-full sm:w-auto bg-white text-primary border-2 border-slate-100 shadow-xl shadow-slate-200/50 px-10 py-5 rounded-2xl font-black text-lg hover:bg-slate-50 active:scale-95 transition-all flex items-center justify-center gap-2">
+              <Link href="#modules" className="w-full sm:w-auto bg-white text-primary border-2 border-slate-100 shadow-xl shadow-slate-200/50 px-10 py-5 rounded-2xl font-black text-lg hover:bg-slate-50 active:scale-95 transition-all flex items-center justify-center gap-2">
                 <BookOpen className="w-5 h-5" />
-                View Subjects
+                View Modules
               </Link>
             </div>
           </div>

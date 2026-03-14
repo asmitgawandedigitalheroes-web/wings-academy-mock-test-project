@@ -17,16 +17,16 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import BackButton from '@/components/common/BackButton'
-import { getSubjectDetails, getTestsBySubject, toggleSubjectStatus } from '@/app/actions/admin'
+import { getModuleDetails, getTestsByModule, toggleModuleStatus } from '@/app/actions/admin'
 import AddTestModal from '@/components/admin/tests/AddTestModal'
 import TestCardActions from '@/components/admin/tests/TestCardActions'
 
-export default function SubjectDetailPage() {
+export default function ModuleDetailPage() {
   const params = useParams()
   const router = useRouter()
   const id = params.id as string
 
-  const [subject, setSubject] = useState<any>(null)
+  const [module, setModule] = useState<any>(null)
   const [tests, setTests] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddTest, setShowAddTest] = useState(false)
@@ -34,11 +34,11 @@ export default function SubjectDetailPage() {
 
   const fetchData = async () => {
     setLoading(true)
-    const [subDetails, testList] = await Promise.all([
-      getSubjectDetails(id),
-      getTestsBySubject(id)
+    const [modDetails, testList] = await Promise.all([
+      getModuleDetails(id),
+      getTestsByModule(id)
     ])
-    setSubject(subDetails)
+    setModule(modDetails)
     setTests(testList)
     setLoading(false)
   }
@@ -55,11 +55,11 @@ export default function SubjectDetailPage() {
     fetchData()
   }, [id])
 
-  if (loading && !subject) {
+  if (loading && !module) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
         <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-        <p className="font-black text-slate-400 animate-pulse">Loading subject data...</p>
+        <p className="font-black text-slate-400 animate-pulse">Loading module data...</p>
       </div>
     )
   }
@@ -70,10 +70,10 @@ export default function SubjectDetailPage() {
       {showAddTest && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <AddTestModal 
-            subjectId={id}
+            moduleId={id}
             existingTests={tests}
-            freeLimit={subject?.free_tests_limit}
-            paidLimit={subject?.paid_tests_limit}
+            freeLimit={module?.free_tests_limit}
+            paidLimit={module?.paid_tests_limit}
             onCancel={() => setShowAddTest(false)}
             onSuccess={() => {
               setShowAddTest(false)
@@ -92,14 +92,14 @@ export default function SubjectDetailPage() {
               <BookOpen className="w-8 h-8 text-primary" />
             </div>
             <div>
-              <h1 className="text-3xl font-black text-[#0f172a] tracking-tight capitalize">{subject?.name}</h1>
+              <h1 className="text-3xl font-black text-[#0f172a] tracking-tight capitalize">{module?.name}</h1>
             </div>
           </div>
           <div className="flex items-center gap-4">
             <Link 
-              href={`/admin/subjects/${id}/settings`}
+              href={`/admin/modules/${id}/settings`}
               className="p-4 bg-white shadow-xl shadow-primary/5 rounded-2xl text-slate-400 hover:text-primary transition-all hover:scale-105 border border-slate-50"
-              title="Subject Settings"
+              title="Module Settings"
             >
               <Settings2 className="w-6 h-6" />
             </Link>
@@ -132,22 +132,22 @@ export default function SubjectDetailPage() {
           <div>
             <p className="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p>
             <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${subject?.status === 'disabled' ? 'bg-red-500' : 'bg-green-500'}`}></div>
-              <p className="text-lg font-black text-[#0f172a]">{subject?.status === 'disabled' ? 'Disabled' : 'Enabled'}</p>
+              <div className={`w-2 h-2 rounded-full ${module?.status === 'disabled' ? 'bg-red-500' : 'bg-green-500'}`}></div>
+              <p className="text-lg font-black text-[#0f172a]">{module?.status === 'disabled' ? 'Disabled' : 'Enabled'}</p>
             </div>
           </div>
           <button 
             onClick={async () => {
-              const res = await toggleSubjectStatus(id, subject?.status || 'enabled')
+              const res = await toggleModuleStatus(id, module?.status || 'enabled')
               if (res.success) fetchData()
             }}
             className={`px-4 py-2 rounded-xl font-bold text-xs transition-all ${
-              subject?.status === 'disabled' 
+              module?.status === 'disabled' 
               ? 'bg-green-50 text-green-700 hover:bg-green-100' 
               : 'bg-red-50 text-red-700 hover:bg-red-100'
             }`}
           >
-            {subject?.status === 'disabled' ? 'Enable Subject' : 'Disable Subject'}
+            {module?.status === 'disabled' ? 'Enable Module' : 'Disable Module'}
           </button>
         </div>
       </div>
@@ -178,7 +178,7 @@ export default function SubjectDetailPage() {
               <FileText className="w-12 h-12 text-primary translate-x-0.5" />
             </div>
             <h3 className="text-2xl font-black text-[#0f172a]">No Tests Yet</h3>
-            <p className="text-slate-500 max-w-sm mx-auto font-medium">This subject doesn't have any mock tests yet. Create your first one to start adding questions.</p>
+            <p className="text-slate-500 max-w-sm mx-auto font-medium">This module doesn't have any mock tests yet. Create your first one to start adding questions.</p>
             <button 
               onClick={() => setShowAddTest(true)}
               className="bg-primary text-white px-10 py-4 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.05] transition-all"
@@ -210,7 +210,7 @@ export default function SubjectDetailPage() {
                   </div>
                   <TestCardActions 
                     test={test} 
-                    subjectId={id} 
+                    moduleId={id} 
                     onRefresh={fetchData} 
                   />
                 </div>

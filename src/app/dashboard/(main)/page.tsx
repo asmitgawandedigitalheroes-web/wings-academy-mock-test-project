@@ -2,10 +2,10 @@ import React from 'react'
 import { createClient } from '@/utils/supabase/server'
 import WelcomeBanner from '@/components/dashboard/WelcomeBanner'
 import StatsGrid from '@/components/dashboard/StatsGrid'
-import SubjectProgress from '@/components/dashboard/SubjectProgress'
+import ModuleProgress from '@/components/dashboard/ModuleProgress'
 import PerformanceChart from '@/components/dashboard/PerformanceChart'
 import RecentActivity from '@/components/dashboard/RecentActivity'
-import { getDashboardStats, getSubjectProgress, getPerformanceData, getRecentActivity } from '@/app/actions/dashboard'
+import { getDashboardStats, getModuleProgress, getPerformanceData, getRecentActivity } from '@/app/actions/dashboard'
 import { redirect } from 'next/navigation'
 
 export default async function StudentDashboard() {
@@ -25,7 +25,7 @@ export default async function StudentDashboard() {
 
   const [stats, progress, chartData, activities] = await Promise.all([
     getDashboardStats(),
-    getSubjectProgress(),
+    getModuleProgress(),
     getPerformanceData(),
     getRecentActivity()
   ])
@@ -46,7 +46,7 @@ export default async function StudentDashboard() {
           <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-primary/5 min-h-[400px]">
             <PerformanceChart data={chartData} />
           </div>
-          <SubjectProgress data={progress} />
+          <ModuleProgress data={progress} />
         </div>
 
         <div className="xl:col-span-1">

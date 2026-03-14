@@ -107,7 +107,7 @@ export default function TestPreviewPage() {
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[0.65rem] font-black text-primary uppercase tracking-[0.2em]">Preview Mode</span>
               <span className="text-slate-200">•</span>
-              <span className="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.2em] capitalize">{test.subjects?.name}</span>
+              <span className="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.2em] capitalize">{test.modules?.name}</span>
             </div>
             <h1 className="text-2xl md:text-3xl font-black text-[#0f172a] capitalize">{test.title}</h1>
           </div>

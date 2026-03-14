@@ -8,14 +8,14 @@ export async function getAdminDashboardStats() {
   // Execute all count and sum queries in parallel
   const [
     { count: studentCount, error: studentError },
-    { count: subjectCount, error: subjectError },
+    { count: moduleCount, error: moduleError },
     { count: questionCount, error: questionError },
     { count: testCount, error: testError },
     { data: payments, error: paymentError },
     { data: results, error: resultsError }
   ] = await Promise.all([
     supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student'),
-    supabase.from('subjects').select('*', { count: 'exact', head: true }),
+    supabase.from('modules').select('*', { count: 'exact', head: true }),
     supabase.from('questions').select('*', { count: 'exact', head: true }),
     supabase.from('test_sets').select('*', { count: 'exact', head: true }).eq('is_hidden', false),
     supabase.from('payments').select('amount').eq('status', 'completed'),
@@ -28,13 +28,13 @@ export async function getAdminDashboardStats() {
     ? Math.round(results.filter(r => Number(r.score) >= 70).length / results.length * 100)
     : 0
 
-  if (studentError || subjectError || questionError || testError || resultsError || paymentError) {
-    console.error('Error fetching admin stats:', { studentError, subjectError, questionError, testError, resultsError, paymentError })
+  if (studentError || moduleError || questionError || testError || resultsError || paymentError) {
+    console.error('Error fetching admin stats:', { studentError, moduleError, questionError, testError, resultsError, paymentError })
   }
 
   return {
     studentCount: studentCount || 0,
-    subjectCount: subjectCount || 0,
+    moduleCount: moduleCount || 0,
     questionCount: questionCount || 0,
     testCount: testCount || 0,
     totalRevenue: totalRevenue.toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
@@ -49,12 +49,12 @@ export async function getRecentAdminActivity() {
     { data: newProfiles },
     { data: recentTests },
     { data: newTests },
-    { data: newSubjects }
+    { data: newModules }
   ] = await Promise.all([
     supabase.from('profiles').select('full_name, created_at').order('created_at', { ascending: false }).limit(5),
     supabase.from('test_results').select('score, completed_at, test_sets(title), profiles(full_name)').order('completed_at', { ascending: false }).limit(5),
     supabase.from('test_sets').select('title, created_at').order('created_at', { ascending: false }).limit(5),
-    supabase.from('subjects').select('name, created_at').order('created_at', { ascending: false }).limit(5)
+    supabase.from('modules').select('name, created_at').order('created_at', { ascending: false }).limit(5)
   ])
 
   const activities: any[] = []
@@ -92,12 +92,12 @@ export async function getRecentAdminActivity() {
     })
   })
 
-  newSubjects?.forEach(s => {
+  newModules?.forEach(s => {
     activities.push({
-      id: `subject-${s.created_at}`,
+      id: `module-${s.created_at}`,
       type: 'admin_action',
       user: 'Admin',
-      detail: `Added new subject: ${s.name}`,
+      detail: `Added new module: ${s.name}`,
       time: new Date(s.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       timestamp: new Date(s.created_at).getTime()
     })
@@ -115,12 +115,12 @@ export async function getAllAdminActivity() {
     { data: newProfiles },
     { data: recentTests },
     { data: newTests },
-    { data: newSubjects }
+    { data: newModules }
   ] = await Promise.all([
     supabase.from('profiles').select('id, full_name, created_at').order('created_at', { ascending: false }).limit(50),
     supabase.from('test_results').select('id, score, completed_at, test_sets(title), profiles(full_name)').order('completed_at', { ascending: false }).limit(50),
     supabase.from('test_sets').select('id, title, created_at').order('created_at', { ascending: false }).limit(50),
-    supabase.from('subjects').select('id, name, created_at').order('created_at', { ascending: false }).limit(50)
+    supabase.from('modules').select('id, name, created_at').order('created_at', { ascending: false }).limit(50)
   ])
 
   const activities: any[] = []
@@ -162,12 +162,12 @@ export async function getAllAdminActivity() {
     })
   })
 
-  newSubjects?.forEach(s => {
+  newModules?.forEach(s => {
     activities.push({
-      id: `subject-${s.id}-${s.created_at}`,
+      id: `module-${s.id}-${s.created_at}`,
       type: 'admin_action',
       user: 'Admin',
-      detail: `Added new subject: ${s.name}`,
+      detail: `Added new module: ${s.name}`,
       time: new Date(s.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       date: new Date(s.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }),
       timestamp: new Date(s.created_at).getTime()
@@ -192,7 +192,7 @@ export async function getAdminAnalytics(days: number = 14) {
     supabase.from('profiles').select('created_at').gte('created_at', startDate.toISOString()),
     supabase.from('test_results').select('completed_at').gte('completed_at', startDate.toISOString()),
     supabase.from('payments').select('amount, created_at').eq('status', 'completed').gte('created_at', startDate.toISOString()),
-    supabase.from('test_results').select('test_sets(subjects(name))')
+    supabase.from('test_results').select('test_sets(modules(name))')
   ])
 
   // 1. Engagement Map (Last X days)
@@ -219,15 +219,15 @@ export async function getAdminAnalytics(days: number = 14) {
     if (engagementMap[pDate]) engagementMap[pDate].revenue += Number(p.amount)
   })
 
-  // 2. Subject Distribution
-  const subMap: Record<string, number> = {}
+  // 2. Module Distribution
+  const modMap: Record<string, number> = {}
   subDistribution?.forEach((item: any) => {
-    const name = item.test_sets?.subjects?.name || 'Unknown'
-    subMap[name] = (subMap[name] || 0) + 1
+    const name = item.test_sets?.modules?.name || 'Unknown'
+    modMap[name] = (modMap[name] || 0) + 1
   })
   
   const totalCompletions = subDistribution?.length || 1
-  const distribution = Object.entries(subMap).map(([name, count]) => ({
+  const distribution = Object.entries(modMap).map(([name, count]) => ({
     name,
     value: Math.round((count / totalCompletions) * 100)
   })).sort((a, b) => b.value - a.value).slice(0, 4)

@@ -92,7 +92,7 @@ export default function ExamsSection() {
 
         <div className="mt-20 text-center">
             <p className="text-sm font-bold text-slate-400 italic">
-                Don't see your exam? <Link href="/contact" className="text-primary font-black hover:text-accent underline decoration-primary/20 underline-offset-4 hover:decoration-accent transition-all">Request a subject</Link> and we'll prioritize it.
+                Don't see your exam? <Link href="/contact" className="text-primary font-black hover:text-accent underline decoration-primary/20 underline-offset-4 hover:decoration-accent transition-all">Request a module</Link> and we'll prioritize it.
             </p>
         </div>
       </div>

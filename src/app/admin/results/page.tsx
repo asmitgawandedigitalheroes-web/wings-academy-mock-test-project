@@ -1,15 +1,15 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { 
-  Search, 
-  Filter, 
-  Download, 
-  Trash2, 
-  Eye, 
-  TrendingUp, 
-  CheckCircle2, 
-  XCircle, 
+import {
+  Search,
+  Filter,
+  Download,
+  Trash2,
+  Eye,
+  TrendingUp,
+  CheckCircle2,
+  XCircle,
   Calendar,
   User,
   BookOpen,
@@ -32,7 +32,7 @@ export default function ResultsPage() {
 
   const fetchResults = async () => {
     setLoading(true)
-    
+
     // Fetch completed test attempts and join with profiles and test_sets
     const { data, error } = await supabase
       .from('test_results')
@@ -49,29 +49,29 @@ export default function ResultsPage() {
         test_sets (
           title,
           pass_percentage,
-          subject_id,
-          subjects (name)
+          module_id,
+          modules (name)
         )
       `)
       .order('completed_at', { ascending: false })
 
     if (error) {
-        console.error('Detailed Error fetching results:', {
-            message: error.message,
-            details: error.details,
-            hint: error.hint,
-            code: error.code
-        })
-        setResults([])
+      console.error('Detailed Error fetching results:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      })
+      setResults([])
     } else {
-        // Map completed_at to created_at so the rest of the UI doesn't break
-        const mappedData = (data || []).map(item => ({
-            ...item,
-            created_at: item.completed_at
-        }))
-        setResults(mappedData as any)
+      // Map completed_at to created_at so the rest of the UI doesn't break
+      const mappedData = (data || []).map(item => ({
+        ...item,
+        created_at: item.completed_at
+      }))
+      setResults(mappedData as any)
     }
-    
+
     setLoading(false)
   }
 
@@ -96,12 +96,12 @@ export default function ResultsPage() {
   }
 
   const filteredResults = results.filter(res => {
-    const matchesSearch = 
+    const matchesSearch =
       res.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       res.test_sets?.title?.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchesStatus = 
-      statusFilter === 'all' || 
+
+    const matchesStatus =
+      statusFilter === 'all' ||
       (statusFilter === 'pass' && res.score >= (res.test_sets?.pass_percentage || 70)) ||
       (statusFilter === 'fail' && res.score < (res.test_sets?.pass_percentage || 70))
 
@@ -112,7 +112,7 @@ export default function ResultsPage() {
   const totalAttempts = results.length
   const passCount = results.filter(r => r.score >= (r.test_sets?.pass_percentage || 70)).length
   const passRate = totalAttempts > 0 ? Math.round((passCount / totalAttempts) * 100) : 0
-  
+
   // Calculate today's tests
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -174,7 +174,7 @@ export default function ResultsPage() {
       <div className="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-xl shadow-primary/5 flex flex-col md:flex-row gap-4 items-center">
         <div className="relative flex-1 w-full">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <input 
+          <input
             type="text"
             placeholder="Search students or tests..."
             value={searchTerm}
@@ -185,7 +185,7 @@ export default function ResultsPage() {
         <div className="flex items-center gap-3 w-full md:w-auto">
           <div className="relative w-full md:w-48">
             <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <select 
+            <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
               className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl outline-none appearance-none font-bold cursor-pointer"
@@ -206,7 +206,7 @@ export default function ResultsPage() {
             <thead>
               <tr className="bg-slate-50/50">
                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Student</th>
-                <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Subject / Test</th>
+                <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Module / Test</th>
                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-center">Score</th>
                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Date</th>
                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Status</th>
@@ -266,22 +266,22 @@ export default function ResultsPage() {
                         </span>
                       </td>
                       <td className="px-8 py-6 text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Link 
+                        <div className="flex items-center justify-end gap-2 transition-opacity">
+                          <Link
                             href={`/admin/results/${result.id}`}
                             className="p-2 hover:bg-white hover:shadow-md rounded-xl transition-all text-slate-400 hover:text-primary border border-transparent hover:border-slate-100"
                           >
                             <Eye className="w-4 h-4" />
                           </Link>
-                          <button 
+                          <button
                             onClick={() => handleDeleteResult(result.id)}
                             disabled={deletingId === result.id}
                             className="p-2 hover:bg-white hover:shadow-md rounded-xl transition-all text-slate-400 hover:text-red-500 border border-transparent hover:border-slate-100 disabled:opacity-50"
                           >
                             {deletingId === result.id ? (
-                                <div className="w-4 h-4 border-2 border-red-500/20 border-t-red-500 rounded-full animate-spin"></div>
+                              <div className="w-4 h-4 border-2 border-red-500/20 border-t-red-500 rounded-full animate-spin"></div>
                             ) : (
-                                <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-4 h-4" />
                             )}
                           </button>
                         </div>
@@ -298,71 +298,72 @@ export default function ResultsPage() {
       {/* Results Mobile Card View */}
       <div className="md:hidden space-y-4">
         {loading ? (
-             <div className="bg-white p-12 rounded-[2.5rem] border border-slate-100 text-center">
-                <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="font-bold text-slate-400">Loading results...</p>
-             </div>
+          <div className="bg-white p-12 rounded-[2.5rem] border border-slate-100 text-center">
+            <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="font-bold text-slate-400">Loading results...</p>
+          </div>
         ) : filteredResults.length === 0 ? (
-             <div className="bg-white p-12 rounded-[2.5rem] border border-slate-100 text-center font-bold text-slate-400">
-                No results found.
-             </div>
+          <div className="bg-white p-12 rounded-[2.5rem] border border-slate-100 text-center font-bold text-slate-400">
+            No results found.
+          </div>
         ) : (
-            filteredResults.map((result) => {
-              const isPass = result.score >= (result.test_sets?.pass_percentage || 70)
-              return (
-                <div key={result.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-xl shadow-primary/5 space-y-4">
-                    <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center">
-                                <User className="w-5 h-5 text-slate-400" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-black text-[#0f172a]">{result.profiles?.full_name}</p>
-                            </div>
-                        </div>
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs ${isPass ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                            {result.score}%
-                        </div>
+          filteredResults.map((result) => {
+            const isPass = result.score >= (result.test_sets?.pass_percentage || 70)
+            return (
+              <div key={result.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-xl shadow-primary/5 space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center">
+                      <User className="w-5 h-5 text-slate-400" />
                     </div>
-
-                    <div className="bg-slate-50/50 p-3 rounded-2xl">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Attempt Details</p>
-                        <p className="text-xs font-bold text-[#0f172a]">{result.test_sets?.title}</p>
-                        <div className="flex items-center gap-3 mt-2 text-[10px] text-slate-400 font-bold">
-                            <span className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                {new Date(result.created_at).toLocaleDateString()}
-                            </span>
-                            <span className={`flex items-center gap-1 ${isPass ? 'text-green-600' : 'text-red-500'}`}>
-                                {isPass ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
-                                {isPass ? 'Passed' : 'Failed'}
-                            </span>
-                        </div>
+                    <div>
+                      <p className="text-sm font-black text-[#0f172a]">{result.profiles?.full_name}</p>
                     </div>
-
-                    <div className="flex items-center justify-end gap-2 pt-2">
-                        <Link 
-                          href={`/admin/results/${result.id}`}
-                          className="flex-1 flex items-center justify-center gap-2 py-3 bg-slate-50 text-slate-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary/5 hover:text-primary transition-colors"
-                        >
-                            <Eye className="w-4 h-4" />
-                            View Detail
-                        </Link>
-                        <button 
-                          onClick={() => handleDeleteResult(result.id)}
-                          disabled={deletingId === result.id}
-                          className="p-3 bg-red-50 text-red-400 rounded-xl hover:bg-red-100 transition-colors disabled:opacity-50"
-                        >
-                            {deletingId === result.id ? (
-                                <div className="w-4 h-4 border-2 border-red-400/20 border-t-red-400 rounded-full animate-spin"></div>
-                            ) : (
-                                <Trash2 className="w-4 h-4" />
-                            )}
-                        </button>
-                    </div>
+                  </div>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs ${isPass ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                    {result.score}%
+                  </div>
                 </div>
-              )
-            })
+
+                <div className="bg-slate-50/50 p-3 rounded-2xl">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Attempt Details</p>
+                  <p className="text-xs font-bold text-[#0f172a] group-hover:text-primary transition-colors">{result.test_sets?.title}</p>
+                  <p className="text-[10px] font-bold text-slate-400 mt-1 truncate">{result.test_sets?.modules?.name}</p>
+                  <div className="flex items-center gap-3 mt-2 text-[10px] text-slate-400 font-bold">
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      {new Date(result.created_at).toLocaleDateString()}
+                    </span>
+                    <span className={`flex items-center gap-1 ${isPass ? 'text-green-600' : 'text-red-500'}`}>
+                      {isPass ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                      {isPass ? 'Passed' : 'Failed'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <Link
+                    href={`/admin/results/${result.id}`}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-slate-50 text-slate-400 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary/5 hover:text-primary transition-colors"
+                  >
+                    <Eye className="w-4 h-4" />
+                    View Detail
+                  </Link>
+                  <button
+                    onClick={() => handleDeleteResult(result.id)}
+                    disabled={deletingId === result.id}
+                    className="p-3 bg-red-50 text-red-400 rounded-xl hover:bg-red-100 transition-colors disabled:opacity-50"
+                  >
+                    {deletingId === result.id ? (
+                      <div className="w-4 h-4 border-2 border-red-400/20 border-t-red-400 rounded-full animate-spin"></div>
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            )
+          })
         )}
       </div>
     </div>

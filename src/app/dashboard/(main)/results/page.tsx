@@ -29,7 +29,7 @@ export default async function ResultsHistoryPage() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-slate-50">
-                <th className="px-8 py-6 text-[0.65rem] font-black text-slate-400 uppercase tracking-widest">Mock Test / Subject</th>
+                <th className="px-8 py-6 text-[0.65rem] font-black text-slate-400 uppercase tracking-widest">Mock Test / Module</th>
                 <th className="px-8 py-6 text-[0.65rem] font-black text-slate-400 uppercase tracking-widest">Score</th>
                 <th className="px-8 py-6 text-[0.65rem] font-black text-slate-400 uppercase tracking-widest">Status</th>
                 <th className="px-8 py-6 text-[0.65rem] font-black text-slate-400 uppercase tracking-widest">Attempted Date</th>
@@ -46,7 +46,7 @@ export default async function ResultsHistoryPage() {
                       </div>
                       <div>
                         <p className="font-bold text-[#0f172a] leading-tight">{record.title}</p>
-                        <p className="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest mt-1">{record.subject}</p>
+                        <p className="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest mt-1">{record.module}</p>
                       </div>
                     </div>
                   </td>
@@ -92,7 +92,7 @@ export default async function ResultsHistoryPage() {
                   </div>
                   <div>
                     <h4 className="font-bold text-[#0f172a] leading-tight">{record.title}</h4>
-                    <p className="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest mt-1">{record.subject}</p>
+                    <p className="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest mt-1">{record.module}</p>
                   </div>
                 </div>
                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[0.6rem] font-black uppercase tracking-wider shrink-0 ${record.status === 'Passed' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
@@ -131,7 +131,7 @@ export default async function ResultsHistoryPage() {
             </div>
             <h3 className="text-2xl font-black text-[#0f172a]">No Results Yet</h3>
             <p className="text-slate-500 font-medium">Start your first mock test to see your history here.</p>
-            <Link href="/dashboard/subjects" className="mt-8 inline-block px-8 py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20">Browse Tests</Link>
+            <Link href="/dashboard/modules" className="mt-8 inline-block px-8 py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20">Browse Tests</Link>
           </div>
         )}
       </div>

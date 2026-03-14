@@ -17,7 +17,7 @@ export default function MyTestsClient({ initialTests }: MyTestsClientProps) {
     return initialTests.filter(test => {
       const matchesFilter = filter === 'all' || test.status === 'Completed'
       const matchesSearch = test.title.toLowerCase().includes(search.toLowerCase()) ||
-        test.subject.toLowerCase().includes(search.toLowerCase())
+        (test.module || '').toLowerCase().includes(search.toLowerCase())
       return matchesFilter && matchesSearch
     })
   }, [initialTests, filter, search])
@@ -36,7 +36,7 @@ export default function MyTestsClient({ initialTests }: MyTestsClientProps) {
           <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-accent" />
           <input
             type="text"
-            placeholder="Search tests or subjects..."
+            placeholder="Search tests or modules..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-12 pr-6 py-3.5 bg-slate-50 border-none rounded-xl md:rounded-2xl font-bold text-sm text-[#0f172a] placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 transition-all shadow-inner"
@@ -75,7 +75,7 @@ export default function MyTestsClient({ initialTests }: MyTestsClientProps) {
                 </div>
                 <div>
                   <h3 className="text-lg md:text-xl font-black text-[#0f172a] mb-1 leading-tight capitalize">{test.title}</h3>
-                  <p className="text-[0.6rem] md:text-[0.65rem] font-black text-slate-400 uppercase tracking-widest">{test.subject}</p>
+                  <p className="text-[0.6rem] md:text-[0.65rem] font-black text-slate-400 uppercase tracking-widest">{test.module}</p>
                 </div>
               </div>
 
@@ -128,11 +128,11 @@ export default function MyTestsClient({ initialTests }: MyTestsClientProps) {
                 ? `We couldn't find any tests matching "${search}"`
                 : (filter === 'completed'
                   ? "You haven't completed any tests yet. Keep practicing!"
-                  : "Head over to the subjects page to explore and unlock tests.")
+                  : "Head over to the modules page to explore and unlock tests.")
               }
             </p>
             {filter === 'all' && (
-              <Link href="/dashboard/subjects" className="mt-8 inline-block px-8 py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all">Browse Subjects</Link>
+              <Link href="/dashboard/modules" className="mt-8 inline-block px-8 py-4 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all">Browse Modules</Link>
             )}
           </div>
         )}

@@ -2,10 +2,10 @@
 
 import React, { useState, useMemo } from 'react'
 import { Search, BookOpen, CheckCircle2, Trophy, Clock, ArrowRight, Library } from 'lucide-react'
-import { getSubjectResultsDetails } from '@/app/actions/dashboard'
-import SubjectProgressDetail from './SubjectProgressDetail'
+import { getModuleResultsDetails } from '@/app/actions/dashboard'
+import ModuleProgressDetail from './ModuleProgressDetail'
 
-interface SubjectProgress {
+interface ModuleProgress {
   id: string
   name: string
   description: string
@@ -18,7 +18,7 @@ interface SubjectProgress {
 }
 
 interface ProgressClientProps {
-  initialData: SubjectProgress[]
+  initialData: ModuleProgress[]
 }
 
 type FilterStatus = 'all' | 'in-progress' | 'completed'
@@ -26,17 +26,17 @@ type FilterStatus = 'all' | 'in-progress' | 'completed'
 export default function ProgressClient({ initialData }: ProgressClientProps) {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<FilterStatus>('all')
-  const [selectedSubject, setSelectedSubject] = useState<any | null>(null)
+  const [selectedModule, setSelectedModule] = useState<any | null>(null)
   const [loading, setLoading] = useState(false)
 
-  const handleSubjectClick = async (subjectId: string) => {
+  const handleModuleClick = async (moduleId: string) => {
     setLoading(true)
     try {
-      const data = await getSubjectResultsDetails(subjectId)
-      setSelectedSubject(data)
+      const data = await getModuleResultsDetails(moduleId)
+      setSelectedModule(data)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (error) {
-      console.error('Failed to load subject details:', error)
+      console.error('Failed to load module details:', error)
     } finally {
       setLoading(false)
     }
@@ -63,16 +63,16 @@ export default function ProgressClient({ initialData }: ProgressClientProps) {
   const totalCompleted = initialData.reduce((acc, p) => acc + p.completedCount, 0)
   const totalAvailable = initialData.reduce((acc, p) => acc + p.totalTests, 0)
 
-  if (selectedSubject) {
+  if (selectedModule) {
     return (
-      <SubjectProgressDetail
-        subject={selectedSubject.subject}
-        stats={selectedSubject.stats}
-        history={selectedSubject.history}
-        accuracy={selectedSubject.accuracy}
-        difficultyBreakdown={selectedSubject.difficultyBreakdown}
-        tests={selectedSubject.tests}
-        onBack={() => setSelectedSubject(null)}
+      <ModuleProgressDetail
+        module={selectedModule.module}
+        stats={selectedModule.stats}
+        history={selectedModule.history}
+        accuracy={selectedModule.accuracy}
+        difficultyBreakdown={selectedModule.difficultyBreakdown}
+        tests={selectedModule.tests}
+        onBack={() => setSelectedModule(null)}
       />
     )
   }
@@ -83,7 +83,7 @@ export default function ProgressClient({ initialData }: ProgressClientProps) {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl md:text-4xl font-black text-[#0f172a] tracking-tight">Learning Progress</h1>
-          <p className="text-slate-500 font-medium mt-2 text-sm md:text-base">Track your subject-wise performance and mastery levels.</p>
+          <p className="text-slate-500 font-medium mt-2 text-sm md:text-base">Track your module-wise performance and mastery levels.</p>
         </div>
       </div>
 
@@ -93,7 +93,7 @@ export default function ProgressClient({ initialData }: ProgressClientProps) {
           <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
           <input
             type="text"
-            placeholder="Search subject..."
+            placeholder="Search module..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-12 pr-6 py-3.5 bg-slate-50 border-none rounded-xl md:rounded-2xl font-bold text-sm text-[#0f172a] placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 transition-all shadow-inner"
@@ -118,20 +118,20 @@ export default function ProgressClient({ initialData }: ProgressClientProps) {
 
       {/* Progress Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-        {filteredData.map((subject) => (
-          <div key={subject.id} className="group bg-white rounded-[2rem] md:rounded-[2.5rem] border border-slate-100 shadow-xl shadow-primary/5 p-6 md:p-8 hover:border-primary/20 transition-all duration-300 flex flex-col">
+        {filteredData.map((module) => (
+          <div key={module.id} className="group bg-white rounded-[2rem] md:rounded-[2.5rem] border border-slate-100 shadow-xl shadow-primary/5 p-6 md:p-8 hover:border-primary/20 transition-all duration-300 flex flex-col">
             <div className="flex items-start justify-between mb-6 md:mb-8">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 md:w-14 md:h-14 bg-accent/10 text-accent rounded-xl md:rounded-2xl flex items-center justify-center shrink-0">
                   <Library className="w-6 h-6 md:w-7 md:h-7" />
                 </div>
                 <div>
-                  <h3 className="text-lg md:text-xl font-black text-[#0f172a] leading-tight capitalize">{subject.name}</h3>
-                  <p className="text-[0.6rem] md:text-[0.65rem] font-black text-slate-400 uppercase tracking-widest mt-1">Subject Progress</p>
+                  <h3 className="text-lg md:text-xl font-black text-[#0f172a] leading-tight capitalize">{module.name}</h3>
+                  <p className="text-[0.6rem] md:text-[0.65rem] font-black text-slate-400 uppercase tracking-widest mt-1">Module Progress</p>
                 </div>
               </div>
               <div className="w-10 h-10 md:w-12 md:h-12 rounded-full border-[3px] md:border-4 border-slate-50 flex items-center justify-center text-[0.6rem] md:text-[0.65rem] font-black text-primary shrink-0">
-                {subject.completionRate}%
+                {module.completionRate}%
               </div>
             </div>
 
@@ -140,12 +140,12 @@ export default function ProgressClient({ initialData }: ProgressClientProps) {
               <div className="space-y-2">
                 <div className="flex justify-between items-center text-[0.65rem]">
                   <span className="font-bold text-slate-400">Mastery Level</span>
-                  <span className="font-black text-primary">{subject.avgScore}%</span>
+                  <span className="font-black text-primary">{module.avgScore}%</span>
                 </div>
                 <div className="h-2 md:h-2.5 bg-slate-100 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-accent rounded-full transition-all duration-1000"
-                    style={{ width: `${subject.avgScore || 0}%` }}
+                    style={{ width: `${module.avgScore || 0}%` }}
                   ></div>
                 </div>
               </div>
@@ -156,24 +156,24 @@ export default function ProgressClient({ initialData }: ProgressClientProps) {
                     <CheckCircle2 className="w-3 h-3 text-green-500 shrink-0" />
                     <span className="text-[0.55rem] md:text-[0.6rem] font-bold text-slate-400 uppercase tracking-widest truncate">Completed</span>
                   </div>
-                  <p className="text-base md:text-lg font-black text-[#0f172a]">{subject.completedCount}/{subject.totalTests}</p>
+                  <p className="text-base md:text-lg font-black text-[#0f172a]">{module.completedCount}/{module.totalTests}</p>
                 </div>
                 <div className="bg-slate-50 p-3.5 md:p-4 rounded-xl md:rounded-2xl border border-slate-100">
                   <div className="flex items-center gap-2 mb-1">
                     <Trophy className="w-3 h-3 text-amber-500 shrink-0" />
                     <span className="text-[0.55rem] md:text-[0.6rem] font-bold text-slate-400 uppercase tracking-widest truncate">Best Score</span>
                   </div>
-                  <p className="text-base md:text-lg font-black text-[#0f172a]">{subject.bestScore}%</p>
+                  <p className="text-base md:text-lg font-black text-[#0f172a]">{module.bestScore}%</p>
                 </div>
               </div>
 
               <div className="flex items-center justify-between pt-4 border-t border-slate-50">
                 <div className="flex items-center gap-2 text-slate-400 overflow-hidden">
                   <Clock className="w-3 h-3 shrink-0" />
-                  <span className="text-[0.65rem] md:text-xs font-bold truncate">{subject.latestActivity}</span>
+                  <span className="text-[0.65rem] md:text-xs font-bold truncate">{module.latestActivity}</span>
                 </div>
                 <button
-                  onClick={() => handleSubjectClick(subject.id)}
+                  onClick={() => handleModuleClick(module.id)}
                   className="p-2 md:p-2.5 bg-slate-50 hover:bg-accent hover:text-white rounded-lg md:rounded-xl transition-all group shrink-0"
                 >
                   <ArrowRight className="w-4 h-4" />
@@ -192,7 +192,7 @@ export default function ProgressClient({ initialData }: ProgressClientProps) {
               {search ? 'No Matches Found' : 'No Progress Data'}
             </h3>
             <p className="text-slate-500 font-medium">
-              {search ? `We couldn't find any subjects matching "${search}"` : 'Start taking mock tests to track your learning journey.'}
+              {search ? `We couldn't find any modules matching "${search}"` : 'Start taking mock tests to track your learning journey.'}
             </p>
           </div>
         )}

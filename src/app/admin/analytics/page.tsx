@@ -231,10 +231,10 @@ export default function AnalyticsPage() {
                     </div>
                 </div>
 
-                {/* Subject Popularity (Pie) */}
+                {/* Module Popularity (Pie) */}
                 <div className="bg-[#1E3A8A] p-8 rounded-[3rem] shadow-2xl shadow-primary/20 text-white flex flex-col">
-                    <h3 className="text-xl font-black mb-1">Subject Split</h3>
-                    <p className="text-white/40 text-sm font-medium mb-8">Test distribution by subject</p>
+                    <h3 className="text-xl font-black mb-1">Module Split</h3>
+                    <p className="text-white/40 text-sm font-medium mb-8">Test distribution by module</p>
                     
                     <div className="flex-1 min-h-[250px] relative">
                         <ResponsiveContainer width="100%" height="100%">

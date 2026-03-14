@@ -22,9 +22,14 @@ export async function login(formData: FormData) {
   // Check user role for redirection
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, status')
     .eq('id', data.user.id)
     .single()
+
+  if (profile?.status === 'suspended') {
+    await supabase.auth.signOut()
+    return redirect(`/login?error=${encodeURIComponent('Your account has been suspended. Please contact support.')}`)
+  }
 
   revalidatePath('/admin', 'layout')
   revalidatePath('/dashboard', 'layout')

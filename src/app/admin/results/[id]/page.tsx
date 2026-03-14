@@ -49,7 +49,8 @@ export default function ResultDetailPage() {
           pass_percentage,
           marks_per_question,
           negative_marks,
-          subjects (name)
+          module_id,
+          modules (name)
         )
       `)
       .eq('id', id)
@@ -246,8 +247,8 @@ export default function ResultDetailPage() {
             </h4>
             <div className="space-y-6">
               <div>
-                <p className="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest mb-1">Subject</p>
-                <p className="font-black text-primary uppercase text-xs">{result.test_sets?.subjects?.name || 'General'}</p>
+                <p className="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest mb-1">Module</p>
+                <p className="font-black text-primary uppercase text-xs">{result.test_sets?.modules?.name || 'General'}</p>
               </div>
               <div>
                 <p className="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest mb-1">Test Title</p>

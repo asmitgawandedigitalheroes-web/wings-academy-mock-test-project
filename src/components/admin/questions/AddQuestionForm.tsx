@@ -6,16 +6,17 @@ import { addQuestion } from '@/app/actions/admin'
 import ConfirmationModal from '@/components/common/ConfirmationModal'
 
 interface QuestionFormProps {
-  subjects: { id: string, name: string, categories: { name: string } }[]
+  modules: { id: string, name: string, categories: { name: string } }[]
   onSuccess: () => void
   onCancel: () => void
 }
 
-export default function AddQuestionForm({ subjects, onSuccess, onCancel }: QuestionFormProps) {
+export default function AddQuestionForm({ modules, onSuccess, onCancel }: QuestionFormProps) {
   const [question, setQuestion] = useState('')
   const [options, setOptions] = useState(['', '', '', ''])
-  const [correctIndex, setCorrectIndex] = useState(0)
-  const [subjectId, setSubjectId] = useState('')
+  const [type, setType] = useState<'single' | 'multiple'>('single')
+  const [correctIndices, setCorrectIndices] = useState<number[]>([0])
+  const [moduleId, setModuleId] = useState('')
   const [explanation, setExplanation] = useState('')
   const [loading, setLoading] = useState(false)
   const [modalConfig, setModalConfig] = useState<{
@@ -39,10 +40,11 @@ export default function AddQuestionForm({ subjects, onSuccess, onCancel }: Quest
     setLoading(true)
     
     const result = await addQuestion({
-        subjectId,
+        moduleId,
         question_text: question,
         options,
-        correct_option_index: correctIndex,
+        question_type: type,
+        correct_options: correctIndices,
         explanation
     })
 
@@ -77,16 +79,16 @@ export default function AddQuestionForm({ subjects, onSuccess, onCancel }: Quest
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-[0.65rem] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Select Subject</label>
+          <label className="block text-[0.65rem] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Select Module</label>
           <select 
             required
-            value={subjectId}
-            onChange={(e) => setSubjectId(e.target.value)}
+            value={moduleId}
+            onChange={(e) => setModuleId(e.target.value)}
             className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all font-bold text-[#0f172a]"
           >
-            <option value="">Choose a subject...</option>
-            {subjects.map(s => (
-              <option key={s.id} value={s.id} className="capitalize">{s.name}</option>
+            <option value="">Choose a module...</option>
+            {modules.map(m => (
+              <option key={m.id} value={m.id} className="capitalize">{m.name}</option>
             ))}
           </select>
         </div>
@@ -102,16 +104,46 @@ export default function AddQuestionForm({ subjects, onSuccess, onCancel }: Quest
           />
         </div>
 
-        <div className="space-y-3">
-          <label className="block text-[0.65rem] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Options (Select the correct one)</label>
+        <div className="space-y-4">
+          <div className="flex items-center gap-6 p-2 bg-slate-50/50 rounded-2xl border border-slate-100">
+            <button 
+              type="button"
+              onClick={() => {
+                setType('single')
+                setCorrectIndices(prev => [prev[0] || 0])
+              }}
+              className={`flex-1 py-3 px-4 rounded-xl font-black text-[0.65rem] uppercase tracking-widest transition-all ${type === 'single' ? 'bg-white shadow-md text-primary' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              Single Choice
+            </button>
+            <button 
+              type="button"
+              onClick={() => setType('multiple')}
+              className={`flex-1 py-3 px-4 rounded-xl font-black text-[0.65rem] uppercase tracking-widest transition-all ${type === 'multiple' ? 'bg-white shadow-md text-primary' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              Multiple Choice
+            </button>
+          </div>
+
+          <label className="block text-[0.65rem] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
+            Options ({type === 'multiple' ? 'Select all correct ones' : 'Select the correct one'})
+          </label>
           {options.map((opt, idx) => (
-            <div key={idx} className="flex gap-3 items-center">
+            <div key={idx} className="flex gap-4 items-center group">
               <input 
-                type="radio" 
+                type={type === 'multiple' ? 'checkbox' : 'radio'} 
                 name="correct" 
-                checked={correctIndex === idx} 
-                onChange={() => setCorrectIndex(idx)}
-                className="w-5 h-5 accent-primary cursor-pointer"
+                checked={correctIndices.includes(idx)} 
+                onChange={() => {
+                  if (type === 'multiple') {
+                    setCorrectIndices(prev => 
+                      prev.includes(idx) ? prev.filter(i => i !== idx) : [...prev, idx]
+                    )
+                  } else {
+                    setCorrectIndices([idx])
+                  }
+                }}
+                className={`w-5 h-5 accent-primary cursor-pointer border-2 border-slate-200 rounded-lg transition-all`}
               />
               <input 
                 required
@@ -122,7 +154,7 @@ export default function AddQuestionForm({ subjects, onSuccess, onCancel }: Quest
                   newOpts[idx] = e.target.value
                   setOptions(newOpts)
                 }}
-                className="flex-1 px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all font-bold text-[#0f172a]"
+                className="flex-1 px-5 py-4 bg-slate-50 border border-slate-200 rounded-[1.25rem] outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all font-bold text-[#0f172a]"
                 placeholder={`Option ${idx + 1}`}
               />
             </div>
@@ -157,5 +189,5 @@ export default function AddQuestionForm({ subjects, onSuccess, onCancel }: Quest
         </div>
       </form>
     </div>
-  )
+)
 }

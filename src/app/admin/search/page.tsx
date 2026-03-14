@@ -12,7 +12,7 @@ export default async function AdminSearchPage({
   
   const results = await globalSearch(query)
   
-  const hasResults = results.users.length > 0 || results.subjects.length > 0 || results.tests.length > 0
+  const hasResults = results.users.length > 0 || results.modules.length > 0 || results.tests.length > 0
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -34,7 +34,7 @@ export default async function AdminSearchPage({
             </div>
             <h3 className="text-xl font-black text-[#0f172a] mb-2">No results found</h3>
             <p className="text-slate-500 font-medium max-w-sm mx-auto">
-                We couldn't find any users, subjects, or tests matching your search query. Try adjusting your terms.
+                We couldn't find any users, modules, or tests matching your search query. Try adjusting your terms.
             </p>
         </div>
       )}
@@ -67,27 +67,27 @@ export default async function AdminSearchPage({
                 </div>
             </div>
 
-            {/* Subjects Column */}
+            {/* Modules Column */}
             <div className="space-y-4">
                 <div className="flex items-center gap-3 mb-6 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
                     <div className="p-2 bg-purple-50 text-purple-600 rounded-xl">
                         <Database className="w-5 h-5" />
                     </div>
-                    <h2 className="text-lg font-black text-[#0f172a]">Subjects ({results.subjects.length})</h2>
+                    <h2 className="text-lg font-black text-[#0f172a]">Modules ({results.modules.length})</h2>
                 </div>
 
                 <div className="space-y-4">
-                    {results.subjects.map((subject: any) => (
-                        <Link href={`/admin/subjects/${subject.id}`} key={subject.id} className="block bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-primary/30 transition-all group">
-                            <h3 className="font-bold text-[#0f172a] truncate group-hover:text-primary transition-colors">{subject.name}</h3>
-                            <p className="text-sm font-medium text-slate-500 line-clamp-2 mt-1 mb-4">{subject.description || 'No description'}</p>
+                    {results.modules.map((module: any) => (
+                        <Link href={`/admin/modules/${module.id}`} key={module.id} className="block bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-primary/30 transition-all group">
+                            <h3 className="font-bold text-[#0f172a] truncate group-hover:text-primary transition-colors">{module.name}</h3>
+                            <p className="text-sm font-medium text-slate-500 line-clamp-2 mt-1 mb-4">{module.description || 'No description'}</p>
                             <div className="flex items-center text-xs font-bold text-primary gap-1">
-                                View Subject <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                                View Module <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
                             </div>
                         </Link>
                     ))}
-                    {results.subjects.length === 0 && (
-                        <p className="text-sm text-slate-400 font-bold p-6 text-center border-2 border-dashed border-slate-200 rounded-3xl">No subjects found</p>
+                    {results.modules.length === 0 && (
+                        <p className="text-sm text-slate-400 font-bold p-6 text-center border-2 border-dashed border-slate-200 rounded-3xl">No modules found</p>
                     )}
                 </div>
             </div>
@@ -106,7 +106,7 @@ export default async function AdminSearchPage({
                         <Link href={`/admin/tests/${test.id}`} key={test.id} className="block bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-primary/30 transition-all group">
                             <h3 className="font-bold text-[#0f172a] truncate group-hover:text-primary transition-colors">{test.title}</h3>
                             <p className="text-sm font-medium text-slate-500 truncate mt-1 mb-4">
-                                Subject: {test.subjects?.name || 'Unknown Subject'}
+                                Module: {test.modules?.name || 'Unknown Module'}
                             </p>
                             <div className="flex items-center text-xs font-bold text-primary gap-1">
                                 View Test <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />

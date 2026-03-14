@@ -49,7 +49,7 @@ export default function StudentProfilePage() {
       .from('test_results')
       .select(`
         *,
-        test_sets (title, pass_percentage, subjects (name))
+        test_sets (title, pass_percentage, modules (name))
       `)
       .eq('user_id', id)
       .order('completed_at', { ascending: false })
@@ -215,7 +215,7 @@ export default function StudentProfilePage() {
                         <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
                           <td className="px-8 py-4">
                             <p className="text-sm font-black text-[#0f172a]">{t.test_sets?.title}</p>
-                            <p className="text-[10px] text-primary font-bold uppercase">{t.test_sets?.subjects?.name}</p>
+                            <p className="text-[10px] text-primary font-bold uppercase">{t.test_sets?.modules?.name}</p>
                           </td>
                           <td className="px-8 py-4">
                             <span className={`font-black text-sm ${isPass ? 'text-green-600' : 'text-red-600'}`}>

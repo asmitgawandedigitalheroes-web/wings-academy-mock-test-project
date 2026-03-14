@@ -17,15 +17,15 @@ import {
   Loader2
 } from 'lucide-react'
 import Link from 'next/link'
-import { getSubjectDetails, updateSubjectSettings, uploadSubjectAsset } from '@/app/actions/admin'
-import AssetUpload from '@/components/admin/subjects/AssetUpload'
+import { getModuleDetails, updateModuleSettings, uploadModuleAsset } from '@/app/actions/admin'
+import AssetUpload from '@/components/admin/modules/AssetUpload'
 
-export default function SubjectSettingsPage() {
+export default function ModuleSettingsPage() {
     const params = useParams()
     const router = useRouter()
     const id = params.id as string
 
-    const [subject, setSubject] = useState<any>(null)
+    const [module, setModule] = useState<any>(null)
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [formData, setFormData] = useState({
@@ -42,10 +42,10 @@ export default function SubjectSettingsPage() {
     })
 
     useEffect(() => {
-        const fetchSubject = async () => {
-            const data = await getSubjectDetails(id)
+        const fetchModule = async () => {
+            const data = await getModuleDetails(id)
             if (data) {
-                setSubject(data)
+                setModule(data)
                 setFormData({
                     name: data.name || '',
                     code: data.code || '',
@@ -61,17 +61,17 @@ export default function SubjectSettingsPage() {
             }
             setLoading(false)
         }
-        fetchSubject()
+        fetchModule()
     }, [id])
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault()
         setSaving(true)
         const dbStatus = formData.status === 'published' ? 'enabled' : formData.status === 'draft' ? 'disabled' : formData.status
-        const res = await updateSubjectSettings(id, { ...formData, status: dbStatus } as any)
+        const res = await updateModuleSettings(id, { ...formData, status: dbStatus } as any)
         setSaving(false)
         if (res.success) {
-            router.push(`/admin/subjects/${id}`)
+            router.push(`/admin/modules/${id}`)
         } else {
             alert(res.error || 'Failed to save settings')
         }
@@ -91,11 +91,11 @@ export default function SubjectSettingsPage() {
             {/* Header */}
             <div className="flex flex-col gap-4">
                 <Link 
-                    href={`/admin/subjects/${id}`}
+                    href={`/admin/modules/${id}`}
                     className="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors font-bold text-sm"
                 >
                     <ChevronLeft className="w-4 h-4" />
-                    Back to Subject
+                    Back to Module
                 </Link>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
                     <div className="flex items-center gap-4 md:gap-5">
@@ -103,7 +103,7 @@ export default function SubjectSettingsPage() {
                             <Settings2 className="w-6 h-6 md:w-8 md:h-8 text-primary" />
                         </div>
                         <div>
-                            <h1 className="text-2xl md:text-3xl font-black text-[#0f172a] tracking-tight">Subject Settings</h1>
+                            <h1 className="text-2xl md:text-3xl font-black text-[#0f172a] tracking-tight">Module Settings</h1>
                             <p className="text-sm md:text-base text-slate-500 font-medium">Configure basic info, visibility, and pricing.</p>
                         </div>
                     </div>
@@ -125,14 +125,14 @@ export default function SubjectSettingsPage() {
                     <Section title="Basic Info" icon={<Info className="w-5 h-5" />}>
                         <div className="space-y-8">
                             <InputGroup 
-                                label="Subject Name"
+                                label="Module Name"
                                 required
                                 value={formData.name}
                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                placeholder="Enter subject name..."
+                                placeholder="Enter module name..."
                             />
                             <InputGroup 
-                                label="Subject Code"
+                                label="Module Code"
                                 value={formData.code}
                                 onChange={e => setFormData({ ...formData, code: e.target.value })}
                                 placeholder="e.g. ELEC-01"
@@ -143,7 +143,7 @@ export default function SubjectSettingsPage() {
                                     rows={4}
                                     value={formData.description}
                                     onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                    placeholder="Describe the subject goals and coverage..."
+                                    placeholder="Describe the module goals and coverage..."
                                     className="w-full px-7 py-5 bg-slate-50/50 border-2 border-slate-100 rounded-[2rem] outline-none focus:ring-8 focus:ring-primary/5 focus:border-primary/20 transition-all font-bold text-[#0f172a] placeholder:text-slate-300 resize-none hover:bg-white"
                                 />
                             </div>
@@ -183,7 +183,7 @@ export default function SubjectSettingsPage() {
                                         <CreditCard className="w-6 h-6" />
                                     </div>
                                     <div>
-                                        <p className="font-black text-[#0f172a]">Enable Subject Purchase</p>
+                                        <p className="font-black text-[#0f172a]">Enable Module Purchase</p>
                                         <p className="text-[10px] uppercase font-black text-slate-400 tracking-widest">Premium Access Toggle</p>
                                     </div>
                                 </div>
@@ -199,7 +199,7 @@ export default function SubjectSettingsPage() {
                             </div>
                             {formData.enable_purchase && (
                                     <InputGroup 
-                                        label="Subject Price (₹)"
+                                        label="Module Price (₹)"
                                         type="number"
                                         min="0"
                                         value={formData.price}
@@ -236,9 +236,9 @@ export default function SubjectSettingsPage() {
                                     What does this mean?
                                 </p>
                                 <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                                    {formData.status === 'published' && 'Students can find and take tests for this subject.'}
-                                    {formData.status === 'draft' && 'Subject is being prepared. It is hidden from all students.'}
-                                    {formData.status === 'hidden' && 'Subject is not visible in the main catalog but can be accessed via direct links.'}
+                                    {formData.status === 'published' && 'Students can find and take tests for this module.'}
+                                    {formData.status === 'draft' && 'Module is being prepared. It is hidden from all students.'}
+                                    {formData.status === 'hidden' && 'Module is not visible in the main catalog but can be accessed via direct links.'}
                                 </p>
                             </div>
                         </div>
@@ -248,17 +248,17 @@ export default function SubjectSettingsPage() {
                     <Section title="Assets" icon={<ImageIcon className="w-5 h-5" />}>
                         <div className="space-y-8">
                             <AssetUpload 
-                                label="Subject Icon"
+                                label="Module Icon"
                                 currentValue={formData.icon_url}
-                                onUpload={(url) => setFormData({ ...formData, icon_url: url })}
-                                uploadFn={(file) => uploadSubjectAsset(file, `icons`)}
+                                onUpload={(url: string) => setFormData({ ...formData, icon_url: url })}
+                                uploadFn={(file: File) => uploadModuleAsset(file, `icons`)}
                                 aspectRatio="square"
                             />
                             <AssetUpload 
-                                label="Subject Cover Image"
+                                label="Module Cover Image"
                                 currentValue={formData.image_url}
-                                onUpload={(url) => setFormData({ ...formData, image_url: url })}
-                                uploadFn={(file) => uploadSubjectAsset(file, `covers`)}
+                                onUpload={(url: string) => setFormData({ ...formData, image_url: url })}
+                                uploadFn={(file: File) => uploadModuleAsset(file, `covers`)}
                                 aspectRatio="video"
                             />
                         </div>

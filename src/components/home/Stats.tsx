@@ -6,7 +6,7 @@ const Stats = () => {
     {
       icon: <BookOpen className="w-6 h-6 text-accent" />,
       label: '17+ Mock Test Series',
-      description: 'Comprehensive subject coverage'
+      description: 'Comprehensive module coverage'
     },
     {
       icon: <CheckCircle className="w-6 h-6 text-accent" />,

@@ -4,61 +4,81 @@ import { createClient } from '@/utils/supabase/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 
-export async function addSubject(formData: { name: string, categoryId: string }) {
-  const supabase = await createClient()
-
-  const { error } = await supabase
-    .from('subjects')
-    .insert([{
-      name: formData.name,
-      category_id: formData.categoryId
-    }])
-
-  if (error) {
-    console.error('Error adding subject:', error)
-    return { error: error.message }
-  }
-
-  revalidatePath('/admin/questions')
-  return { success: true }
-}
-
-export async function toggleSubjectStatus(subjectId: string, currentStatus: 'enabled' | 'disabled') {
-  const supabase = await createClient()
-  const newStatus = currentStatus === 'enabled' ? 'disabled' : 'enabled'
-  
-  const { error } = await supabase
-    .from('subjects')
-    .update({ status: newStatus })
-    .eq('id', subjectId)
-
-  if (error) {
-    console.error('Error toggling subject status:', error)
-    return { error: error.message }
-  }
-
-  revalidatePath('/admin/questions')
-  revalidatePath('/admin/subjects')
-  revalidatePath(`/admin/subjects/${subjectId}`)
-  return { success: true }
-}
-
-export async function addQuestion(formData: {
-  subjectId: string,
-  question_text: string,
-  options: string[],
-  correct_option_index: number,
-  explanation?: string
+export async function addModule(formData: { 
+  name: string, 
+  categoryId: string, 
+  module_code?: string, 
+  description?: string, 
+  free_test_limit?: number, 
+  paid_test_limit?: number, 
+  status?: string 
 }) {
   const supabase = await createClient()
 
   const { error } = await supabase
+    .from('modules')
+    .insert([{
+      name: formData.name,
+      category_id: formData.categoryId,
+      module_code: formData.module_code,
+      description: formData.description,
+      free_test_limit: formData.free_test_limit ?? 2,
+      paid_test_limit: formData.paid_test_limit ?? 3,
+      status: formData.status === 'Inactive' ? 'disabled' : 'enabled'
+    }])
+
+  if (error) {
+    console.error('Error adding module:', error)
+    return { error: error.message }
+  }
+
+  revalidatePath('/admin/questions')
+  return { success: true }
+}
+
+export async function toggleModuleStatus(moduleId: string, currentStatus: 'enabled' | 'disabled') {
+  const supabase = await createClient()
+  const newStatus = currentStatus === 'enabled' ? 'disabled' : 'enabled'
+  
+  const { error } = await supabase
+    .from('modules')
+    .update({ status: newStatus })
+    .eq('id', moduleId)
+
+  if (error) {
+    console.error('Error toggling module status:', error)
+    return { error: error.message }
+  }
+
+  revalidatePath('/admin/questions')
+  revalidatePath('/admin/modules')
+  revalidatePath(`/admin/modules/${moduleId}`)
+  return { success: true }
+}
+
+export async function addQuestion(formData: {
+  moduleId: string,
+  question_text: string,
+  options: string[],
+  correct_options?: number[],
+  correct_option_index?: number,
+  question_type?: 'single' | 'multiple',
+  explanation?: string
+}) {
+  const supabase = await createClient()
+
+  const qType = formData.question_type || 'single'
+  const correctOptions = formData.correct_options || (formData.correct_option_index !== undefined ? [formData.correct_option_index] : [])
+
+  const { error } = await supabase
     .from('questions')
     .insert([{
-      subject_id: formData.subjectId,
+      module_id: formData.moduleId,
       question_text: formData.question_text,
       options: formData.options,
-      correct_option_index: formData.correct_option_index,
+      question_type: qType,
+      correct_options: correctOptions,
+      correct_option_index: qType === 'single' ? correctOptions[0] : null,
       explanation: formData.explanation
     }])
 
@@ -74,13 +94,13 @@ export async function addQuestion(formData: {
 export async function getStats() {
   const supabase = await createClient()
 
-  const [subjectsCount, questionsCount] = await Promise.all([
-    supabase.from('subjects').select('*', { count: 'exact', head: true }),
+  const [modulesCount, questionsCount] = await Promise.all([
+    supabase.from('modules').select('*', { count: 'exact', head: true }),
     supabase.from('questions').select('*', { count: 'exact', head: true })
   ])
 
   return {
-    subjects: subjectsCount.count || 0,
+    modules: modulesCount.count || 0,
     questions: questionsCount.count || 0
   }
 }
@@ -91,20 +111,20 @@ export async function getCategories() {
     return data || []
 }
 
-export async function getSubjectsWithCategories() {
+export async function getModulesWithCategories() {
     const supabase = await createClient()
     const { data } = await supabase
-        .from('subjects')
+        .from('modules')
         .select('id, name, status, categories(id, name)')
         .order('name')
     return (data || []) as any[]
 }
-export async function getTestsBySubject(subjectId: string) {
+export async function getTestsByModule(moduleId: string) {
     const supabase = await createClient()
     const { data } = await supabase
         .from('test_sets')
         .select('*, question_count:test_questions(count)')
-        .eq('subject_id', subjectId)
+        .eq('module_id', moduleId)
         .order('created_at', { ascending: false })
     
     // Transform the data to pull the count out of the array/object
@@ -118,7 +138,7 @@ export async function getTestsBySubject(subjectId: string) {
 
 export async function addTest(formData: { 
   title: string, 
-  subjectId: string, 
+  moduleId: string, 
   duration: number, 
   description?: string,
   passPercentage?: number,
@@ -137,7 +157,7 @@ export async function addTest(formData: {
     .insert([{
       title: formData.title,
       description: formData.description,
-      subject_id: formData.subjectId,
+      module_id: formData.moduleId,
       time_limit_minutes: formData.duration,
       pass_percentage: formData.passPercentage || 40,
       target_questions: formData.targetQuestions || 0,
@@ -154,11 +174,11 @@ export async function addTest(formData: {
     return { error: error.message }
   }
 
-  revalidatePath(`/admin/subjects/${formData.subjectId}`)
+  revalidatePath(`/admin/modules/${formData.moduleId}`)
   return { success: true }
 }
 
-export async function updateTestSettings(testId: string, subjectId: string, data: {
+export async function updateTestSettings(testId: string, moduleId: string, data: {
     title: string,
     description?: string,
     time_limit_minutes: number,
@@ -212,13 +232,13 @@ export async function updateTestSettings(testId: string, subjectId: string, data
         return { error: error.message }
     }
 
-    revalidatePath(`/admin/subjects/${subjectId}`)
+    revalidatePath(`/admin/modules/${moduleId}`)
     revalidatePath(`/admin/tests/${testId}`)
     revalidatePath(`/admin/tests/${testId}/settings`)
     return { success: true }
 }
 
-export async function toggleTestStatus(testId: string, subjectId: string, currentStatus: 'published' | 'draft') {
+export async function toggleTestStatus(testId: string, moduleId: string, currentStatus: 'published' | 'draft') {
   const supabase = await createClient()
   const newStatus = currentStatus === 'published' ? 'draft' : 'published'
   
@@ -235,13 +255,13 @@ export async function toggleTestStatus(testId: string, subjectId: string, curren
     return { error: error.message }
   }
 
-  revalidatePath(`/admin/subjects/${subjectId}`)
+  revalidatePath(`/admin/modules/${moduleId}`)
   revalidatePath('/admin/tests')
   revalidatePath(`/admin/tests/${testId}`)
   return { success: true }
 }
 
-export async function toggleTestPaid(testId: string, subjectId: string, currentPaid: boolean, price: number = 0) {
+export async function toggleTestPaid(testId: string, moduleId: string, currentPaid: boolean, price: number = 0) {
   const supabase = await createClient()
   const { error } = await supabase
     .from('test_sets')
@@ -253,11 +273,11 @@ export async function toggleTestPaid(testId: string, subjectId: string, currentP
     return { error: error.message }
   }
 
-  revalidatePath(`/admin/subjects/${subjectId}`)
+  revalidatePath(`/admin/modules/${moduleId}`)
   return { success: true }
 }
 
-export async function deleteTestSet(testId: string, subjectId: string) {
+export async function deleteTestSet(testId: string, moduleId: string) {
   const supabase = await createClient()
   
   // 1. Delete links in test_questions
@@ -274,22 +294,22 @@ export async function deleteTestSet(testId: string, subjectId: string) {
     return { error: error.message }
   }
 
-  revalidatePath(`/admin/subjects/${subjectId}`)
+  revalidatePath(`/admin/modules/${moduleId}`)
   return { success: true }
 }
 
-export async function getSubjectDetails(subjectId: string) {
+export async function getModuleDetails(moduleId: string) {
     const supabase = await createClient()
     const { data } = await supabase
-        .from('subjects')
+        .from('modules')
         .select('*, categories(name)')
-        .eq('id', subjectId)
+        .eq('id', moduleId)
         .single()
     return data
 }
 export async function addQuestionToTest(formData: {
   testSetId: string,
-  subjectId: string,
+  moduleId: string,
   question_text: string,
   question_type: 'single' | 'multiple',
   options: string[],
@@ -305,7 +325,7 @@ export async function addQuestionToTest(formData: {
   const { data: questionData, error: questionError } = await supabase
     .from('questions')
     .insert([{
-      subject_id: formData.subjectId,
+      module_id: formData.moduleId,
       question_text: formData.question_text,
       question_type: formData.question_type,
       options: formData.options,
@@ -369,7 +389,7 @@ export async function getTestDetails(testId: string) {
     const supabase = await createClient()
     const { data } = await supabase
         .from('test_sets')
-        .select('*, subjects(id, name, categories(name))')
+        .select('*, modules(id, name, categories(name))')
         .eq('id', testId)
         .single()
     return data
@@ -470,47 +490,47 @@ export async function getCourseDetails(id: string) {
   return data
 }
 
-export async function getCourseSubjects(courseId: string) {
+export async function getCourseModules(courseId: string) {
   const supabase = await createClient()
   const { data } = await supabase
-    .from('course_subjects')
-    .select('*, subjects(*, categories(*))')
+    .from('course_modules')
+    .select('*, modules(*, categories(*))')
     .eq('course_id', courseId)
     .order('created_at', { ascending: false })
   
   return data || []
 }
 
-export async function addSubjectToCourse(courseId: string, subjectId: string) {
+export async function addModuleToCourse(courseId: string, moduleId: string) {
   const supabase = await createClient()
   const { error } = await supabase
-    .from('course_subjects')
-    .insert([{ course_id: courseId, subject_id: subjectId }])
+    .from('course_modules')
+    .insert([{ course_id: courseId, module_id: moduleId }])
   
   if (error) {
-    console.error('Error adding subject to course:', error)
+    console.error('Error adding module to course:', error)
     return { error: error.message }
   }
   revalidatePath(`/admin/courses/${courseId}`)
   return { success: true }
 }
 
-export async function removeSubjectFromCourse(courseId: string, subjectId: string) {
+export async function removeModuleFromCourse(courseId: string, moduleId: string) {
   const supabase = await createClient()
   const { error } = await supabase
-    .from('course_subjects')
+    .from('course_modules')
     .delete()
-    .match({ course_id: courseId, subject_id: subjectId })
+    .match({ course_id: courseId, module_id: moduleId })
 
   if (error) {
-    console.error('Error removing subject:', error)
+    console.error('Error removing module:', error)
     return { error: error.message }
   }
   revalidatePath(`/admin/courses/${courseId}`)
   return { success: true }
 }
 
-export async function bulkUploadQuestions(testSetId: string, subjectId: string, questions: any[]) {
+export async function bulkUploadQuestions(testSetId: string, moduleId: string, questions: any[]) {
   const supabase = await createClient()
   
   if (!questions || questions.length === 0) return { error: 'No questions provided' }
@@ -576,7 +596,7 @@ export async function bulkUploadQuestions(testSetId: string, subjectId: string, 
       const { data: qData, error: qError } = await supabase
         .from('questions')
         .insert([{
-          subject_id: subjectId,
+          module_id: moduleId,
           question_text: qText,
           question_type: finalType,
           options: options,
@@ -621,8 +641,12 @@ export async function bulkUploadQuestions(testSetId: string, subjectId: string, 
 }
 
 export async function updateUserStatus(userId: string, status: 'active' | 'suspended') {
-  const supabase = await createClient()
-  const { error } = await supabase
+  const supabaseAdmin = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  const { error } = await supabaseAdmin
     .from('profiles')
     .update({ status })
     .eq('id', userId)
@@ -637,8 +661,12 @@ export async function updateUserStatus(userId: string, status: 'active' | 'suspe
 }
 
 export async function promoteUserToAdmin(userId: string) {
-  const supabase = await createClient()
-  const { error } = await supabase
+  const supabaseAdmin = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  const { error } = await supabaseAdmin
     .from('profiles')
     .update({ role: 'admin' })
     .eq('id', userId)
@@ -653,22 +681,55 @@ export async function promoteUserToAdmin(userId: string) {
 }
 
 export async function deleteUser(userId: string) {
-  const supabase = await createClient()
+  const supabaseAdmin = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
   
-  // Note: auth.users deletion usually requires admin privileges or service role
-  // Here we only delete the profile; in a real app, we might want to disable auth too.
-  const { error } = await supabase
-    .from('profiles')
-    .delete()
-    .eq('id', userId)
+  try {
+    // 1. Get all attempt IDs for this user to clean up answers
+    const { data: attempts } = await supabaseAdmin
+      .from('test_attempts')
+      .select('id')
+      .eq('user_id', userId)
+    
+    const attemptIds = (attempts || []).map(a => a.id)
 
-  if (error) {
-    console.error('Error deleting profile:', error)
-    return { error: error.message }
+    // 2. Delete student answers if attempts exist
+    if (attemptIds.length > 0) {
+      await supabaseAdmin
+        .from('student_answers')
+        .delete()
+        .in('attempt_id', attemptIds)
+    }
+
+    // 3. Delete other related records
+    await Promise.all([
+      supabaseAdmin.from('test_violations').delete().eq('user_id', userId),
+      supabaseAdmin.from('test_results').delete().eq('user_id', userId),
+      supabaseAdmin.from('payments').delete().eq('user_id', userId)
+    ])
+
+    // 4. Delete attempts
+    await supabaseAdmin.from('test_attempts').delete().eq('user_id', userId)
+
+    // 5. Delete profile
+    await supabaseAdmin.from('profiles').delete().eq('id', userId)
+
+    // 6. Finally delete the Auth user
+    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId)
+    
+    if (authError) {
+      console.error('Error deleting auth user:', authError)
+      // We don't return error here if profile was deleted, but log it
+    }
+
+    revalidatePath('/admin/users')
+    return { success: true }
+  } catch (error: any) {
+    console.error('Comprehensive error deleting user:', error)
+    return { error: error.message || 'Failed to delete user and related records' }
   }
-
-  revalidatePath('/admin/users')
-  return { success: true }
 }
 
 export async function getAllTests() {
@@ -677,7 +738,7 @@ export async function getAllTests() {
     .from('test_sets')
     .select(`
       *,
-      subjects (
+      modules (
         id,
         name
       )
@@ -686,7 +747,7 @@ export async function getAllTests() {
   
   return data || []
 }
-export async function updateSubjectSettings(subjectId: string, data: {
+export async function updateModuleSettings(moduleId: string, data: {
   name: string,
   code?: string,
   description?: string,
@@ -701,7 +762,7 @@ export async function updateSubjectSettings(subjectId: string, data: {
   const supabase = await createClient()
   
   const { error } = await supabase
-    .from('subjects')
+    .from('modules')
     .update({
       name: data.name,
       code: data.code,
@@ -714,20 +775,20 @@ export async function updateSubjectSettings(subjectId: string, data: {
       icon_url: data.icon_url,
       image_url: data.image_url
     })
-    .eq('id', subjectId)
+    .eq('id', moduleId)
 
   if (error) {
-    console.error('Error updating subject settings:', error)
+    console.error('Error updating module settings:', error)
     return { error: error.message }
   }
 
-  revalidatePath(`/admin/subjects/${subjectId}`)
-  revalidatePath('/admin/subjects')
+  revalidatePath(`/admin/modules/${moduleId}`)
+  revalidatePath('/admin/modules')
   revalidatePath('/admin/questions')
   return { success: true }
 }
 
-export async function uploadSubjectAsset(file: File, path: string) {
+export async function uploadModuleAsset(file: File, path: string) {
   const supabase = await createClient()
   
   const fileExt = file.name.split('.').pop()
@@ -735,7 +796,7 @@ export async function uploadSubjectAsset(file: File, path: string) {
   const filePath = `${path}/${fileName}`
 
   const { error: uploadError, data } = await supabase.storage
-    .from('subject-assets')
+    .from('module-assets')
     .upload(filePath, file)
 
   if (uploadError) {
@@ -744,7 +805,7 @@ export async function uploadSubjectAsset(file: File, path: string) {
   }
 
   const { data: { publicUrl } } = supabase.storage
-    .from('subject-assets')
+    .from('module-assets')
     .getPublicUrl(filePath)
 
   return { success: true, url: publicUrl }
@@ -773,14 +834,14 @@ export async function uploadQuestionImage(file: File) {
   return { success: true, url: publicUrl }
 }
 
-export async function deleteSubject(subjectId: string) {
+export async function deleteModule(moduleId: string) {
   const supabase = await createClient()
 
-  // 1. Get all tests for this subject
+  // 1. Get all tests for this module
   const { data: tests } = await supabase
     .from('test_sets')
     .select('id')
-    .eq('subject_id', subjectId)
+    .eq('module_id', moduleId)
 
   const testIds = (tests || []).map(t => t.id)
 
@@ -792,29 +853,29 @@ export async function deleteSubject(subjectId: string) {
   }
 
   // 4. Delete questions
-  await supabase.from('questions').delete().eq('subject_id', subjectId)
+  await supabase.from('questions').delete().eq('module_id', moduleId)
 
-  // 5. Delete subject
+  // 5. Delete module
   const { error } = await supabase
-    .from('subjects')
+    .from('modules')
     .delete()
-    .eq('id', subjectId)
+    .eq('id', moduleId)
 
   if (error) {
-    console.error('Error deleting subject:', error)
+    console.error('Error deleting module:', error)
     return { error: error.message }
   }
 
   revalidatePath('/admin/questions')
-  revalidatePath('/admin/subjects')
+  revalidatePath('/admin/modules')
   return { success: true }
 }
 
 export async function deleteCourse(courseId: string) {
   const supabase = await createClient()
 
-  // 1. Delete course_subjects links
-  await supabase.from('course_subjects').delete().eq('course_id', courseId)
+  // 1. Delete course_modules links
+  await supabase.from('course_modules').delete().eq('course_id', courseId)
   
   // 2. Delete the course
   const { error } = await supabase
@@ -921,7 +982,7 @@ export async function globalSearch(query: string) {
   const supabase = await createClient()
 
   if (!query || query.trim() === '') {
-    return { users: [], subjects: [], tests: [] }
+    return { users: [], modules: [], tests: [] }
   }
 
   const searchTerm = `%${query.trim()}%`
@@ -929,7 +990,7 @@ export async function globalSearch(query: string) {
   // Use Promise.all to fetch concurrently
   const [
     { data: users },
-    { data: subjects },
+    { data: modules },
     { data: tests }
   ] = await Promise.all([
     supabase
@@ -938,20 +999,20 @@ export async function globalSearch(query: string) {
       .or(`email.ilike.${searchTerm},full_name.ilike.${searchTerm}`)
       .limit(5),
     supabase
-      .from('subjects')
+      .from('modules')
       .select('id, name, description')
       .or(`name.ilike.${searchTerm},description.ilike.${searchTerm}`)
       .limit(5),
     supabase
       .from('test_sets')
-      .select('id, title, subject_id')
+      .select('id, title, module_id')
       .or(`title.ilike.${searchTerm},description.ilike.${searchTerm}`)
       .limit(5)
   ])
 
   return {
     users: users || [],
-    subjects: subjects || [],
+    modules: modules || [],
     tests: tests || []
   }
 }

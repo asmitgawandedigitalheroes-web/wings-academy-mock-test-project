@@ -3,7 +3,7 @@ import Footer from '@/components/layout/Footer'
 import Hero from '@/components/home/Hero'
 import Stats from '@/components/home/Stats'
 import HowItWorks from '@/components/home/HowItWorks'
-import Subjects from '@/components/home/Subjects'
+import Modules from '@/components/home/Modules'
 import Features from '@/components/home/Features'
 import PerformanceSection from '@/components/home/PerformanceSection'
 import ExcellenceSection from '@/components/home/ExcellenceSection'
@@ -20,7 +20,7 @@ export default function Home() {
       <Features />
       <PerformanceSection />
       <ExcellenceSection />
-      <Subjects />
+      <Modules />
       <DashboardPreview />
       <FinalCTA />
       <Footer />

@@ -175,7 +175,7 @@ export default async function ProfilePage() {
                                                 </div>
                                                 <div>
                                                     <p className="font-bold text-[#0f172a] leading-tight">{purchase.testName}</p>
-                                                    <p className="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest mt-1">{purchase.subject}</p>
+                                                    <p className="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest mt-1">{purchase.module}</p>
                                                 </div>
                                             </div>
                                         </td>
@@ -217,7 +217,7 @@ export default async function ProfilePage() {
                                     </div>
                                     <div className="flex-1 overflow-hidden">
                                         <p className="font-bold text-[#0f172a] leading-tight truncate">{purchase.testName}</p>
-                                        <p className="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest mt-0.5 truncate">{purchase.subject}</p>
+                                        <p className="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest mt-0.5 truncate">{purchase.module}</p>
                                     </div>
                                     <div className="text-right grow-0 shrink-0">
                                         <p className="text-lg font-black text-[#0f172a]">{purchase.price}</p>

@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { getTestDetails, updateTestSettings } from '@/app/actions/admin'
+import CustomTimePicker from '@/components/form/CustomTimePicker'
 
 export default function TestSettingsPage() {
     const params = useParams()
@@ -97,13 +98,13 @@ export default function TestSettingsPage() {
         setError(null)
         setMessage(null)
 
-        if (!test?.subject_id) {
-            setError('Subject ID not found. Cannot save.')
+        if (!test?.module_id) {
+            setError('Module ID not found. Cannot save.')
             setSaving(false)
             return
         }
 
-        const result = await updateTestSettings(id, test.subject_id, {
+        const result = await updateTestSettings(id, test.module_id, {
             ...formData,
             start_date: formData.start_date || null,
             end_date: formData.end_date || null
@@ -134,8 +135,8 @@ export default function TestSettingsPage() {
                 <AlertCircle className="w-12 h-12 text-red-400" />
                 <h2 className="text-xl font-black text-[#0f172a]">Test Not Found</h2>
                 <p className="text-slate-500 font-medium">The test you're looking for doesn't exist.</p>
-                <Link href="/admin/questions" className="text-primary font-black hover:underline uppercase tracking-widest text-sm mt-2">
-                    Back to Subjects
+                <Link href="/admin/modules" className="text-primary font-black hover:underline uppercase tracking-widest text-sm mt-2">
+                    Back to Modules
                 </Link>
             </div>
         )
@@ -392,19 +393,60 @@ export default function TestSettingsPage() {
                     </Section>
 
                     <Section title="Scheduling" icon={<Calendar className="w-5 h-5" />}>
-                        <div className="space-y-6">
-                            <InputGroup 
-                                label="Start Date/Time"
-                                type="datetime-local"
-                                value={formData.start_date}
-                                onChange={e => setFormData({ ...formData, start_date: e.target.value })}
-                            />
-                            <InputGroup 
-                                label="End Date/Time"
-                                type="datetime-local"
-                                value={formData.end_date}
-                                onChange={e => setFormData({ ...formData, end_date: e.target.value })}
-                            />
+                        <div className="space-y-8">
+                            {/* Start Date & Time */}
+                            <div className="space-y-4">
+                                <label className="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Start Date/Time</label>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="relative group/input">
+                                        <input 
+                                            type="date"
+                                            value={formData.start_date.split('T')[0] || ''}
+                                            onChange={e => {
+                                                const time = formData.start_date.split('T')[1] || '00:00'
+                                                setFormData({ ...formData, start_date: e.target.value ? `${e.target.value}T${time}` : '' })
+                                            }}
+                                            className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-primary/20 focus:ring-8 focus:ring-primary/5 transition-all font-bold text-[#0f172a]"
+                                        />
+                                    </div>
+                                    <div className="relative group/input">
+                                        <CustomTimePicker 
+                                            value={formData.start_date.split('T')[1]?.slice(0, 5) || '00:00'}
+                                            onChange={time => {
+                                                const date = formData.start_date.split('T')[0] || new Date().toISOString().split('T')[0]
+                                                setFormData({ ...formData, start_date: `${date}T${time}` })
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* End Date & Time */}
+                            <div className="space-y-4">
+                                <label className="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">End Date/Time</label>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="relative group/input">
+                                        <input 
+                                            type="date"
+                                            value={formData.end_date.split('T')[0] || ''}
+                                            onChange={e => {
+                                                const time = formData.end_date.split('T')[1] || '00:00'
+                                                setFormData({ ...formData, end_date: e.target.value ? `${e.target.value}T${time}` : '' })
+                                            }}
+                                            className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-primary/20 focus:ring-8 focus:ring-primary/5 transition-all font-bold text-[#0f172a]"
+                                        />
+                                    </div>
+                                    <div className="relative group/input">
+                                        <CustomTimePicker 
+                                            value={formData.end_date.split('T')[1]?.slice(0, 5) || '00:00'}
+                                            onChange={time => {
+                                                const date = formData.end_date.split('T')[0] || new Date().toISOString().split('T')[0]
+                                                setFormData({ ...formData, end_date: `${date}T${time}` })
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </Section>
                 </div>

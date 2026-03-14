@@ -21,7 +21,7 @@ const DashboardPreview = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           {[
-            { icon: <TrendingUp className="w-8 h-8" />, label: "Growth Analytics", text: "Visual charts for every subject" },
+            { icon: <TrendingUp className="w-8 h-8" />, label: "Growth Analytics", text: "Visual charts for every module" },
             { icon: <Award className="w-8 h-8" />, label: "Exam Readiness", text: "Probability of passing real flight exams" },
             { icon: <Target className="w-8 h-8" />, label: "Weakness Identification", text: "Focus areas automatically flagged" },
           ].map((item, i) => (

@@ -18,8 +18,8 @@ interface TestResult {
   passed: boolean
 }
 
-interface SubjectProgressDetailProps {
-  subject: {
+interface ModuleProgressDetailProps {
+  module: {
     name: string
     description: string
   }
@@ -42,9 +42,9 @@ interface SubjectProgressDetailProps {
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444']
 
-export default function SubjectProgressDetail({
-  subject, stats, history, accuracy, difficultyBreakdown, tests, onBack
-}: SubjectProgressDetailProps) {
+export default function ModuleProgressDetail({
+  module, stats, history, accuracy, difficultyBreakdown, tests, onBack
+}: ModuleProgressDetailProps) {
 
   const completionRate = tests.length > 0
     ? Math.round((tests.filter(t => t.result).length / tests.length) * 100)
@@ -73,8 +73,8 @@ export default function SubjectProgressDetail({
               Updated Today
             </div>
           </div>
-          <h2 className="text-3xl md:text-5xl font-black text-[#0f172a] tracking-tight mb-4 capitalize">{subject.name}</h2>
-          <p className="text-slate-500 font-medium max-w-2xl text-sm md:text-lg leading-relaxed">{subject.description || 'Comprehensive evaluation of your performance and progress in this subject category.'}</p>
+          <h2 className="text-3xl md:text-5xl font-black text-[#0f172a] tracking-tight mb-4 capitalize">{module.name}</h2>
+          <p className="text-slate-500 font-medium max-w-2xl text-sm md:text-lg leading-relaxed">{module.description || 'Comprehensive evaluation of your performance and progress in this module category.'}</p>
         </div>
       </div>
 
@@ -265,7 +265,7 @@ export default function SubjectProgressDetail({
       <div className="bg-white rounded-[2rem] md:rounded-[3rem] border border-slate-100 shadow-xl shadow-primary/5 overflow-hidden">
         <div className="p-6 md:p-10 border-b border-slate-50">
           <h3 className="text-xl md:text-2xl font-black text-[#0f172a]">Attempt History</h3>
-          <p className="text-slate-500 font-medium mt-1 text-xs md:text-sm">Manage your test sessions in {subject.name}.</p>
+          <p className="text-slate-500 font-medium mt-1 text-xs md:text-sm">Manage your test sessions in {module.name}.</p>
         </div>
 
         {/* Desktop View */}

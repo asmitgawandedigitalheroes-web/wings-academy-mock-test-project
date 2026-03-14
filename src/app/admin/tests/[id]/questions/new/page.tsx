@@ -112,7 +112,7 @@ export default function AddQuestionPage() {
     try {
       const result = await addQuestionToTest({
         testSetId: testId,
-        subjectId: test?.subject_id,
+        moduleId: test?.module_id,
         question_text: questionText,
         question_type: questionType,
         options,
@@ -149,7 +149,7 @@ export default function AddQuestionPage() {
       {/* Breadcrumb */}
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-2 text-slate-400 font-bold text-sm">
-          <Link href="/admin/questions" className="hover:text-primary transition-colors">Subjects</Link>
+          <Link href="/admin/modules" className="hover:text-primary transition-colors">Modules</Link>
           <ChevronRight className="w-4 h-4 text-slate-300" />
           <Link href={`/admin/tests/${testId}`} className="hover:text-primary transition-colors capitalize">{test?.title}</Link>
           <ChevronRight className="w-4 h-4 text-slate-300" />

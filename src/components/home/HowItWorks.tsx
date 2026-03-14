@@ -6,7 +6,7 @@ const HowItWorks = () => {
     {
       icon: UserPlus,
       title: '1. Register Account',
-      description: 'Create a free account and access subject-wise mock tests instantly.'
+      description: 'Create a free account and access module-wise mock tests instantly.'
     },
     {
       icon: BookOpenCheck,

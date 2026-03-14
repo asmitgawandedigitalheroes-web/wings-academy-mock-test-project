@@ -23,8 +23,9 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import BackButton from '@/components/common/BackButton'
-import { getTestDetails, getQuestionsByTest, deleteQuestion, bulkUploadQuestions, toggleTestStatus } from '@/app/actions/admin'
+import { getTestDetails, getQuestionsByTest, deleteQuestion, bulkUploadQuestions, toggleTestStatus, updateTestSettings } from '@/app/actions/admin'
 import ConfirmationModal from '@/components/common/ConfirmationModal'
+import PostUploadActionModal from '@/components/admin/PostUploadActionModal'
 import * as XLSX from 'xlsx'
 
 export default function TestQuestionsPage() {
@@ -52,6 +53,9 @@ export default function TestQuestionsPage() {
     confirmLabel: 'Confirm',
     onConfirm: () => { }
   })
+
+  const [uploadSuccessCount, setUploadSuccessCount] = useState(0)
+  const [isPostUploadModalOpen, setIsPostUploadModalOpen] = useState(false)
 
   const handleEdit = (question: any) => {
     router.push(`/admin/tests/${id}/questions/${question.id}/edit`)
@@ -96,12 +100,47 @@ export default function TestQuestionsPage() {
 
   const handleToggleStatus = async () => {
     try {
-      const res = await toggleTestStatus(id, test?.subject_id, test?.status || 'draft')
+      const res = await toggleTestStatus(id, test?.module_id, test?.status || 'draft')
       if (res.success) {
         fetchData()
       }
     } catch (err) {
       console.error(err)
+    }
+  }
+
+  const handlePublishNow = async () => {
+    try {
+      setLoading(true)
+      const res = await toggleTestStatus(id, test?.module_id, 'draft') // Force publish from draft
+      if (res.success) {
+        fetchData()
+        setIsPostUploadModalOpen(false)
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSchedule = async (date: string) => {
+    try {
+      setLoading(true)
+      // Call updateTestSettings with the new start_date and status='published'
+      const res = await updateTestSettings(id, test?.module_id, {
+        ...test,
+        start_date: date,
+        status: 'published'
+      })
+      if (res.success) {
+        fetchData()
+        setIsPostUploadModalOpen(false)
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -131,6 +170,14 @@ export default function TestQuestionsPage() {
         onCancel={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
       />
 
+      <PostUploadActionModal
+        isOpen={isPostUploadModalOpen}
+        onClose={() => setIsPostUploadModalOpen(false)}
+        onPublishNow={handlePublishNow}
+        onSchedule={handleSchedule}
+        questionCount={uploadSuccessCount}
+      />
+
       <BackButton variant="ghost" className="-ml-3" />
 
       {/* Header Section */}
@@ -139,7 +186,7 @@ export default function TestQuestionsPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-4">
             <div className="flex items-center gap-2 text-slate-400 font-bold text-sm">
-              <Link href="/admin/questions" className="hover:text-primary transition-colors">Subjects</Link>
+              <Link href="/admin/modules" className="hover:text-primary transition-colors">Modules</Link>
               <ChevronRight className="w-4 h-4 text-slate-300" />
               <span className="text-slate-600 capitalize">{test?.title}</span>
             </div>
@@ -150,16 +197,15 @@ export default function TestQuestionsPage() {
               <div>
                 <h1 className="text-3xl font-black text-[#0f172a] tracking-tight capitalize">{test?.title}</h1>
                 <div className="flex items-center gap-3 mt-1">
-                  <span className="text-slate-400 font-bold text-sm uppercase tracking-wider">{test?.subject_name}</span>
+                  <span className="text-slate-400 font-bold text-sm uppercase tracking-wider">{test?.module_name}</span>
                   <span className="text-slate-200">•</span>
                   <button
                     onClick={handleToggleStatus}
                     disabled={loading}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full font-black text-[0.65rem] uppercase tracking-widest transition-all border ${
-                      test?.status === 'published' 
-                      ? 'bg-accent/10 border-accent/20 text-accent hover:bg-accent/20' 
-                      : 'bg-slate-100 border-slate-200 text-slate-500 hover:bg-slate-200'
-                    }`}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full font-black text-[0.65rem] uppercase tracking-widest transition-all border ${test?.status === 'published'
+                      ? 'bg-green-50 border-green-200 text-green-600 hover:bg-green-100'
+                      : 'bg-accent/10 border-accent/20 text-accent hover:bg-accent/20'
+                      }`}
                   >
                     {test?.status === 'published' ? (
                       <><Eye className="w-3 h-3" /> Published</>
@@ -167,10 +213,10 @@ export default function TestQuestionsPage() {
                       <><EyeOff className="w-3 h-3" /> Draft</>
                     )}
                   </button>
-                  <span className="text-slate-200">•</span>
+
                   <Link
                     href={`/admin/tests/${id}/settings`}
-                    className="flex items-center gap-1.5 text-primary/60 hover:text-primary font-black text-xs uppercase tracking-widest transition-all"
+                    className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary/60 hover:text-primary font-black text-xs uppercase tracking-widest transition-all"
                   >
                     <Settings className="w-3 h-3" />
                     Settings
@@ -200,21 +246,14 @@ export default function TestQuestionsPage() {
                         const sheetName = workbook.SheetNames[0];
                         const sheet = workbook.Sheets[sheetName];
                         const json = XLSX.utils.sheet_to_json(sheet);
-                        
+
                         // Sanitize data to ensure it's a plain object (removes any hidden methods/prototype chains from XLSX)
                         const plainJson = JSON.parse(JSON.stringify(json));
-
-                        const result = await bulkUploadQuestions(id, test?.subject_id, plainJson);
+                        
+                        const result = await bulkUploadQuestions(id, test?.module_id, plainJson);
                         if (result.success) {
-                          const errorMsg = result.lastError ? `\nLast error: ${result.lastError}` : '';
-                          setModalConfig({
-                            isOpen: true,
-                            title: 'Upload Result',
-                            message: `Successfully uploaded ${result.successCount} questions!${result.errorCount ? ` (${result.errorCount} skipped/failed.${errorMsg})` : ''}`,
-                            type: result.errorCount === 0 ? 'info' : 'danger',
-                            confirmLabel: 'Great!',
-                            onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
-                          });
+                          setUploadSuccessCount(result.successCount)
+                          setIsPostUploadModalOpen(true)
                           fetchData();
                         } else {
                           setModalConfig({

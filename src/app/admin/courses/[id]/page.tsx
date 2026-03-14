@@ -13,8 +13,8 @@ import {
   FileText
 } from 'lucide-react'
 import Link from 'next/link'
-import { getCourseDetails, getCourseSubjects, removeSubjectFromCourse } from '@/app/actions/admin'
-import AddSubjectToCourseModal from '@/components/admin/courses/AddSubjectToCourseModal'
+import { getCourseDetails, getCourseModules, removeModuleFromCourse } from '@/app/actions/admin'
+import AddModuleToCourseModal from '@/components/admin/courses/AddModuleToCourseModal'
 import ConfirmationModal from '@/components/common/ConfirmationModal'
 
 export default function CourseDetailPage() {
@@ -23,9 +23,9 @@ export default function CourseDetailPage() {
   const id = params.id as string
 
   const [course, setCourse] = useState<any>(null)
-  const [subjects, setSubjects] = useState<any[]>([])
+  const [modules, setModules] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [showAddSubject, setShowAddSubject] = useState(false)
+  const [showAddModule, setShowAddModule] = useState(false)
   const [modalConfig, setModalConfig] = useState<{
     isOpen: boolean
     title: string
@@ -44,12 +44,12 @@ export default function CourseDetailPage() {
 
   const fetchData = async () => {
     setLoading(true)
-    const [courseDetails, subjectList] = await Promise.all([
+    const [courseDetails, moduleList] = await Promise.all([
       getCourseDetails(id),
-      getCourseSubjects(id)
+      getCourseModules(id)
     ])
     setCourse(courseDetails)
-    setSubjects(subjectList)
+    setModules(moduleList)
     setLoading(false)
   }
 
@@ -57,16 +57,16 @@ export default function CourseDetailPage() {
     fetchData()
   }, [id])
 
-  const handleRemoveSubject = (subjectId: string) => {
+  const handleRemoveModule = (moduleId: string) => {
     setModalConfig({
       isOpen: true,
-      title: 'Remove Subject?',
-      message: 'Are you sure you want to remove this subject from the course? This will not delete the subject itself, only its association with this course.',
+      title: 'Remove Module?',
+      message: 'Are you sure you want to remove this module from the course? This will not delete the module itself, only its association with this course.',
       type: 'danger',
       confirmLabel: 'Remove',
       onConfirm: async () => {
         setLoading(true)
-        const result = await removeSubjectFromCourse(id, subjectId)
+        const result = await removeModuleFromCourse(id, moduleId)
         if (result.success) {
           setModalConfig(prev => ({ ...prev, isOpen: false }))
           fetchData()
@@ -74,7 +74,7 @@ export default function CourseDetailPage() {
           setModalConfig({
             isOpen: true,
             title: 'Error',
-            message: result.error || 'Failed to remove subject.',
+            message: result.error || 'Failed to remove module.',
             type: 'danger',
             confirmLabel: 'Close',
             onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
@@ -101,15 +101,15 @@ export default function CourseDetailPage() {
         onCancel={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
       />
 
-      {/* Add Subject Modal */}
-      {showAddSubject && (
+      {/* Add Module Modal */}
+      {showAddModule && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-          <AddSubjectToCourseModal 
+          <AddModuleToCourseModal 
             courseId={id}
-            attachedSubjectIds={subjects.map(s => s.subject_id)}
-            onCancel={() => setShowAddSubject(false)}
+            attachedModuleIds={modules.map(m => m.module_id)}
+            onCancel={() => setShowAddModule(false)}
             onSuccess={() => {
-              setShowAddSubject(false)
+              setShowAddModule(false)
               fetchData()
             }}
           />
@@ -138,11 +138,11 @@ export default function CourseDetailPage() {
             </div>
           </div>
           <button 
-            onClick={() => setShowAddSubject(true)}
+            onClick={() => setShowAddModule(true)}
             className="bg-primary text-white px-8 py-4 rounded-2xl font-black shadow-xl shadow-primary/20 hover:bg-[#152e75] hover:scale-[1.02] transition-all flex items-center justify-center gap-3 shrink-0"
           >
             <Plus className="w-6 h-6" />
-            Add Subject
+            Add Module
           </button>
         </div>
       </div>
@@ -152,34 +152,34 @@ export default function CourseDetailPage() {
         <div className="flex items-center justify-between">
             <h2 className="text-xl font-black text-[#0f172a] flex items-center gap-3">
                 <Library className="w-6 h-6 text-primary" />
-                Included Subjects ({subjects.length})
+                Included Modules ({modules.length})
             </h2>
         </div>
 
-        {subjects.length === 0 ? (
+        {modules.length === 0 ? (
           <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl shadow-primary/5 p-20 text-center space-y-6">
             <div className="w-24 h-24 bg-primary/5 rounded-[2.5rem] flex items-center justify-center mx-auto mb-4">
               <HelpCircle className="w-12 h-12 text-primary translate-x-0.5" />
             </div>
             <h3 className="text-2xl font-black text-[#0f172a]">This course is empty</h3>
-            <p className="text-slate-500 max-w-sm mx-auto font-medium">Add your first subject to this course bundle to make it available for students.</p>
+            <p className="text-slate-500 max-w-sm mx-auto font-medium">Add your first module to this course bundle to make it available for students.</p>
             <button 
-              onClick={() => setShowAddSubject(true)}
+              onClick={() => setShowAddModule(true)}
               className="bg-primary text-white px-10 py-4 rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.05] transition-all"
             >
-              Add First Subject
+              Add First Module
             </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {subjects.map((item) => (
+            {modules.map((item) => (
               <div key={item.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-xl shadow-primary/5 hover:border-primary/20 transition-all group relative overflow-hidden">
                 <div className="flex justify-between items-start relative z-10 mb-4">
                   <div className="p-4 bg-slate-50 rounded-2xl group-hover:bg-primary/5 group-hover:scale-110 transition-all">
                     <Library className="w-6 h-6 text-primary" />
                   </div>
                   <button 
-                    onClick={() => handleRemoveSubject(item.subject_id)}
+                    onClick={() => handleRemoveModule(item.module_id)}
                     className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-full transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -187,7 +187,7 @@ export default function CourseDetailPage() {
                 </div>
                 
                 <div className="relative z-10">
-                  <h4 className="text-xl font-black text-[#0f172a] mb-2">{item.subjects?.name}</h4>
+                  <h4 className="text-xl font-black text-[#0f172a] mb-2">{item.modules?.name}</h4>
                 </div>
 
                 <div className="flex items-center gap-4 mt-6 pt-6 border-t border-slate-50 relative z-10">

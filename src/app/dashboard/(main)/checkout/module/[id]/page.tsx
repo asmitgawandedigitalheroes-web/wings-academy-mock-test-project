@@ -1,5 +1,5 @@
 import React from 'react'
-import { getTestData, unlockTest } from '@/app/actions/dashboard'
+import { getModuleTests, unlockModule } from '@/app/actions/dashboard'
 import { CreditCard, ShieldCheck, ArrowLeft, ArrowRight, Zap, Target, BookOpen, LockOpen, Landmark, Smartphone } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
@@ -8,33 +8,35 @@ interface PageProps {
   params: Promise<{ id: string }>
 }
 
-export default async function CheckoutPage({ params }: PageProps) {
+export default async function ModuleCheckoutPage({ params }: PageProps) {
   const { id } = await params
-  const test = await getTestData(id)
+  const { module } = await getModuleTests(id)
 
-  if (!test) {
+  if (!module) {
     redirect('/dashboard/modules')
   }
 
   const handleUnlock = async () => {
     'use server'
-    const res = await unlockTest(id)
+    const res = await unlockModule(id)
     if (res.success) {
-      redirect(`/dashboard/modules/${test.module_id}`)
+      redirect(`/dashboard/modules/${id}`)
     }
   }
+
+  const price = module.price || 49
 
   return (
     <div className="max-w-6xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
       <div className="space-y-4">
         <Link 
-          href={`/dashboard/modules/${test.module_id}`} 
+          href={`/dashboard/modules/${id}`} 
           className="inline-flex items-center gap-2 text-slate-400 hover:text-primary font-bold text-sm transition-colors group"
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
           Cancel & Return
         </Link>
-        <h1 className="text-4xl font-black text-[#0f172a] tracking-tight">Unlock Full Access</h1>
+        <h1 className="text-4xl font-black text-[#0f172a] tracking-tight">Unlock Full Module</h1>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
@@ -45,29 +47,29 @@ export default async function CheckoutPage({ params }: PageProps) {
                       <div className="w-16 h-16 rounded-2xl bg-primary/5 flex items-center justify-center text-primary">
                           <LockOpen className="w-8 h-8" />
                       </div>
-                      <h3 className="text-2xl font-black text-[#0f172a]">{test.title}</h3>
-                      <p className="text-slate-500 font-medium text-sm">Gain permanent access to this premium mock test and detailed result explanations.</p>
+                      <h3 className="text-2xl font-black text-[#0f172a]">{module.name}</h3>
+                      <p className="text-slate-500 font-medium text-sm">Gain permanent access to all 5 tests in this module including detailed result explanations.</p>
                   </div>
 
                   <div className="space-y-4 pt-8 border-t border-slate-50">
                       <div className="flex items-center gap-3 text-sm font-bold text-slate-600">
                           <Zap className="w-4 h-4 text-amber-500" />
-                          Unlimited attempts
+                          Complete Module Access (5 Tests)
                       </div>
                       <div className="flex items-center gap-3 text-sm font-bold text-slate-600">
                           <Target className="w-4 h-4 text-green-500" />
-                          Detailed performance analytics
+                          Unlimited attempts for all tests
                       </div>
                       <div className="flex items-center gap-3 text-sm font-bold text-slate-600">
                           <BookOpen className="w-4 h-4 text-blue-500" />
-                          Module-wise benchmarking
+                          Full performance analytics
                       </div>
                   </div>
 
                   <div className="pt-8 border-t border-slate-50">
                       <div className="flex items-center justify-between">
                           <span className="text-slate-400 font-black uppercase tracking-widest text-[0.65rem]">Total Amount</span>
-                          <span className="text-3xl font-black text-[#0f172a]">AED {test.price || 99}</span>
+                          <span className="text-3xl font-black text-[#0f172a]">AED {price}</span>
                       </div>
                   </div>
               </div>
