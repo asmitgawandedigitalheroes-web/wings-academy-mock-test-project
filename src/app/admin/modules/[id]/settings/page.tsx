@@ -17,7 +17,7 @@ import {
   Loader2
 } from 'lucide-react'
 import Link from 'next/link'
-import { getModuleDetails, updateModuleSettings, uploadModuleAsset } from '@/app/actions/admin'
+import { getModuleDetails, updateModuleSettings, uploadModuleAsset, getCategories } from '@/app/actions/admin'
 import AssetUpload from '@/components/admin/modules/AssetUpload'
 
 export default function ModuleSettingsPage() {
@@ -26,11 +26,13 @@ export default function ModuleSettingsPage() {
     const id = params.id as string
 
     const [module, setModule] = useState<any>(null)
+    const [categories, setCategories] = useState<{ id: string, name: string }[]>([])
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [formData, setFormData] = useState({
         name: '',
         code: '',
+        category_id: '' as string | null,
         description: '',
         status: 'enabled',
         free_tests_limit: 2,
@@ -42,13 +44,18 @@ export default function ModuleSettingsPage() {
     })
 
     useEffect(() => {
-        const fetchModule = async () => {
-            const data = await getModuleDetails(id)
+        const fetchData = async () => {
+            const [data, cats] = await Promise.all([
+                getModuleDetails(id),
+                getCategories()
+            ])
+            setCategories(cats)
             if (data) {
                 setModule(data)
                 setFormData({
                     name: data.name || '',
                     code: data.code || '',
+                    category_id: data.category_id || '',
                     description: data.description || '',
                     status: data.status === 'enabled' ? 'published' : data.status === 'disabled' ? 'draft' : data.status || 'draft',
                     free_tests_limit: data.free_tests_limit ?? 2,
@@ -61,7 +68,7 @@ export default function ModuleSettingsPage() {
             }
             setLoading(false)
         }
-        fetchModule()
+        fetchData()
     }, [id])
 
     const handleSave = async (e: React.FormEvent) => {
@@ -131,12 +138,33 @@ export default function ModuleSettingsPage() {
                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
                                 placeholder="Enter module name..."
                             />
-                            <InputGroup 
-                                label="Module Code"
-                                value={formData.code}
-                                onChange={e => setFormData({ ...formData, code: e.target.value })}
-                                placeholder="e.g. ELEC-01"
-                            />
+                             <InputGroup 
+                                 label="Module Code"
+                                 value={formData.code}
+                                 onChange={e => setFormData({ ...formData, code: e.target.value })}
+                                 placeholder="e.g. ELEC-01"
+                             />
+                             <div className="space-y-3">
+                                <div className="flex items-center justify-between ml-1">
+                                    <label className="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.2em] group-focus-within/input:text-primary transition-colors">Module Category</label>
+                                    <span className="text-[10px] font-black text-slate-300 uppercase">Optional</span>
+                                </div>
+                                <div className="relative group/select">
+                                    <select 
+                                        value={formData.category_id || ''}
+                                        onChange={e => setFormData({ ...formData, category_id: e.target.value || null })}
+                                        className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-primary/20 focus:ring-8 focus:ring-primary/5 transition-all font-bold text-[#0f172a] appearance-none cursor-pointer"
+                                    >
+                                        <option value="">No Category (Uncategorized)</option>
+                                        {categories.map(cat => (
+                                            <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                        ))}
+                                    </select>
+                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                        <ChevronLeft className="w-4 h-4 -rotate-90" />
+                                    </div>
+                                </div>
+                             </div>
                             <div className="space-y-3">
                                 <label className="text-[0.65rem] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Description</label>
                                 <textarea 

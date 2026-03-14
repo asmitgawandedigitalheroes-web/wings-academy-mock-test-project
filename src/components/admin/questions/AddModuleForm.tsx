@@ -44,7 +44,7 @@ export default function AddModuleForm({ categories, onSuccess, onCancel }: Modul
     const result = await addModule({ 
       name, 
       categoryId,
-      module_code: moduleCode,
+      code: moduleCode,
       description,
       free_test_limit: freeLimit,
       paid_test_limit: paidLimit,
@@ -86,9 +86,11 @@ export default function AddModuleForm({ categories, onSuccess, onCancel }: Modul
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="block text-[0.65rem] font-black text-slate-400 uppercase tracking-widest ml-1">Module Category</label>
+            <div className="flex items-center justify-between ml-1">
+              <label className="block text-[0.65rem] font-black text-slate-400 uppercase tracking-widest">Module Category</label>
+              <span className="text-[10px] font-black text-slate-300 uppercase">Optional</span>
+            </div>
             <select
-              required
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
               className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all font-bold text-[#0f172a]"
@@ -135,7 +137,7 @@ export default function AddModuleForm({ categories, onSuccess, onCancel }: Modul
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="space-y-2">
             <label className="block text-[0.65rem] font-black text-slate-400 uppercase tracking-widest ml-1">Free Test Limit</label>
             <input
@@ -157,29 +159,17 @@ export default function AddModuleForm({ categories, onSuccess, onCancel }: Modul
               className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all font-bold text-[#0f172a]"
             />
           </div>
-        </div>
 
-        <div className="space-y-2">
-          <label className="block text-[0.65rem] font-black text-slate-400 uppercase tracking-widest ml-1">Status</label>
-          <div className="flex bg-slate-50 rounded-2xl p-1.5 border border-slate-200">
-            <button
-              type="button"
-              onClick={() => setStatus('Active')}
-              className={`flex-1 py-3.5 rounded-xl text-[0.65rem] font-black uppercase tracking-widest transition-all ${
-                status === 'Active' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-slate-400 hover:text-slate-600'
-              }`}
+          <div className="space-y-2">
+            <label className="block text-[0.65rem] font-black text-slate-400 uppercase tracking-widest ml-1">Status</label>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all font-bold text-[#0f172a] appearance-none cursor-pointer"
             >
-              Active
-            </button>
-            <button
-              type="button"
-              onClick={() => setStatus('Inactive')}
-              className={`flex-1 py-3.5 rounded-xl text-[0.65rem] font-black uppercase tracking-widest transition-all ${
-                status === 'Inactive' ? 'bg-red-500 text-white shadow-lg shadow-red-500/20' : 'text-slate-400 hover:text-slate-600'
-              }`}
-            >
-              Inactive
-            </button>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
           </div>
         </div>
 

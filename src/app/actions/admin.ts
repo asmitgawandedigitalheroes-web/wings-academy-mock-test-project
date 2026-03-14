@@ -6,8 +6,8 @@ import { revalidatePath } from 'next/cache'
 
 export async function addModule(formData: { 
   name: string, 
-  categoryId: string, 
-  module_code?: string, 
+  categoryId?: string, 
+  code?: string, 
   description?: string, 
   free_test_limit?: number, 
   paid_test_limit?: number, 
@@ -19,8 +19,8 @@ export async function addModule(formData: {
     .from('modules')
     .insert([{
       name: formData.name,
-      category_id: formData.categoryId,
-      module_code: formData.module_code,
+      category_id: formData.categoryId || null,
+      code: formData.code,
       description: formData.description,
       free_test_limit: formData.free_test_limit ?? 2,
       paid_test_limit: formData.paid_test_limit ?? 3,
@@ -750,6 +750,7 @@ export async function getAllTests() {
 export async function updateModuleSettings(moduleId: string, data: {
   name: string,
   code?: string,
+  category_id?: string | null,
   description?: string,
   status: 'enabled' | 'disabled' | 'hidden',
   free_tests_limit: number,
@@ -766,6 +767,7 @@ export async function updateModuleSettings(moduleId: string, data: {
     .update({
       name: data.name,
       code: data.code,
+      category_id: data.category_id || null,
       description: data.description,
       status: data.status === 'hidden' ? 'disabled' : data.status, // Internal status mapping
       free_tests_limit: data.free_tests_limit,
