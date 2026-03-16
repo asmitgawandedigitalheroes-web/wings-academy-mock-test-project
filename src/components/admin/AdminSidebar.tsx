@@ -32,10 +32,10 @@ const menuItems = [
   { name: 'Categories', href: '/admin/categories', icon: LayoutGrid },
   { name: 'Modules', href: '/admin/modules', icon: Layers },
   { name: 'Tests', href: '/admin/tests', icon: FileText },
-  { name: 'Results', href: '/admin/results', icon: ClipboardList },
+  // { name: 'Results', href: '/admin/results', icon: ClipboardList },
   { name: 'Enquiries', href: '/admin/enquiries', icon: Mail },
   { name: 'Payments', href: '/admin/payments', icon: CreditCard },
-  { name: 'Analytics', href: '/admin/analytics', icon: TrendingUp },
+  // { name: 'Analytics', href: '/admin/analytics', icon: TrendingUp },
   { name: 'Activity Log', href: '/admin/activity', icon: Activity },
   { name: 'Settings', href: '/admin/settings', icon: Settings },
 ]

@@ -22,8 +22,8 @@ const navItems = [
   { name: 'Dashboard', icon: LayoutGrid, href: '/dashboard' },
   { name: 'Modules', icon: Library, href: '/dashboard/modules' },
   { name: 'My Tests', icon: ClipboardList, href: '/dashboard/my-tests' },
-  { name: 'Progress', icon: BarChart3, href: '/dashboard/progress' },
-  { name: 'Results', icon: Award, href: '/dashboard/results' },
+  // { name: 'Progress', icon: BarChart3, href: '/dashboard/progress' },
+  // { name: 'Results', icon: Award, href: '/dashboard/results' },
   { name: 'Profile', icon: UserCircle, href: '/dashboard/profile' },
 ]
 

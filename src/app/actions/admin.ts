@@ -1171,7 +1171,9 @@ export async function updateAdminCredentials(data: { email?: string, password?: 
       return { success: true }
   }
 
-  const { error } = await supabase.auth.updateUser(updatePayload)
+  const { error } = await supabase.auth.updateUser(updatePayload, {
+    emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/auth/callback?next=/admin/settings`,
+  })
 
   if (error) {
     console.error('Error updating admin credentials:', error)

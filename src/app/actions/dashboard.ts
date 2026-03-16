@@ -165,27 +165,9 @@ export async function getModuleTests(moduleId: string) {
   const mappedTests = tests.map(test => {
     const testAttempts = attemptsByTest.get(test.id) || []
     
-    // 1. Security Lockout (Hardcoded 1hr for termination)
-    const lastTermination = testAttempts.filter(a => a.status === 'terminated').sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())[0]
-    let securityLockoutMinutes = 0
-    if (lastTermination) {
-        const lockoutEnd = new Date(new Date(lastTermination.updated_at).getTime() + 60 * 60 * 1000)
-        securityLockoutMinutes = Math.ceil((lockoutEnd.getTime() - new Date().getTime()) / (1000 * 60))
-    }
-
-    // 2. Custom Cooldown
-    const lastAttempt = [...testAttempts].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())[0]
-    let cooldownLockoutMinutes = 0
-    if (lastAttempt && test.cooldown_hours > 0) {
-        const cooldownEnd = new Date(new Date(lastAttempt.updated_at).getTime() + test.cooldown_hours * 60 * 60 * 1000)
-        cooldownLockoutMinutes = Math.ceil((cooldownEnd.getTime() - new Date().getTime()) / (1000 * 60))
-    }
-
-    // 3. Attempt Limit
     const completedAttempts = testAttempts.filter(a => a.status === 'completed').length
     const isLimitReached = test.attempts_allowed > 0 && completedAttempts >= test.attempts_allowed
-
-    const finalLockout = Math.max(0, securityLockoutMinutes, cooldownLockoutMinutes)
+    const finalLockout = 0
 
     const isModulePurchased = purchases?.some(p => p.module_id === moduleId)
     const purchasedTestIds = new Set(purchases?.filter(p => p.test_set_id).map(p => p.test_set_id) || [])
@@ -511,26 +493,14 @@ export async function getMyTests() {
     .eq('user_id', user.id)
     .order('completed_at', { ascending: false })
 
-  // Check for active lockouts
-  const oneHourAgo = new Date(new Date().getTime() - 60 * 60 * 1000).toISOString()
-  const { data: lockouts } = await supabase
-    .from('test_attempts')
-    .select('test_set_id, updated_at')
-    .eq('user_id', user.id)
-    .eq('status', 'terminated')
-    .gt('updated_at', oneHourAgo)
+  const lockouts: any[] = []
 
   const lockoutMap = new Map(lockouts?.map(l => [l.test_set_id, l.updated_at]))
 
   return uniqueTests.map(test => {
     const lastResult = results?.find(r => r.test_set_id === test.id)
     
-    const lockoutTime = lockoutMap.get(test.id)
     let lockoutMinutes = 0
-    if (lockoutTime) {
-      const lockoutEnd = new Date(new Date(lockoutTime).getTime() + 60 * 60 * 1000)
-      lockoutMinutes = Math.ceil((lockoutEnd.getTime() - new Date().getTime()) / (1000 * 60))
-    }
 
     return {
       id: test.id,
@@ -740,18 +710,7 @@ export async function startTestSession(testId: string, requestedSessionId?: stri
     .eq('user_id', user.id)
     .eq('test_set_id', testId)
 
-  // 3. Security Check: Hardcoded 1-hour lockout for termination/violations
-  const lastTermination = testAttempts?.filter(a => a.status === 'terminated').sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())[0]
-  if (lastTermination) {
-    const lockoutEnd = new Date(new Date(lastTermination.updated_at).getTime() + 60 * 60 * 1000)
-    if (new Date() < lockoutEnd) {
-        const minutesLeft = Math.ceil((lockoutEnd.getTime() - new Date().getTime()) / (1000 * 60))
-        return { 
-            error: `Test locked due to security violations. Please try again in ${minutesLeft} minutes.`,
-            lockoutMinutes: minutesLeft
-        }
-    }
-  }
+
 
   // 4. Custom Cooldown Check
   if (test.cooldown_hours > 0) {
@@ -1040,53 +999,7 @@ export async function getAvailableTests() {
   }))
 }
 
-export async function logTestViolation(
-  sessionId: string,
-  testId: string,
-  violationType: string,
-  details: any = {}
-) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user) return { error: 'Not authenticated' }
-
-  const { error } = await supabase
-    .from('test_violations')
-    .insert({
-      user_id: user.id,
-      test_set_id: testId,
-      attempt_id: sessionId,
-      violation_type: violationType,
-      details: details
-    })
-
-  if (error) {
-    console.error('Error logging violation:', error)
-    return { error: error.message }
-  }
-
-  return { success: true }
-}
-
-export async function terminateTestSession(sessionId: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) return { error: 'Not authenticated' }
-
-  const { error } = await supabase
-    .from('test_attempts')
-    .update({ 
-      status: 'terminated', 
-      updated_at: new Date().toISOString() 
-    })
-    .eq('id', sessionId)
-    .eq('user_id', user.id)
-
-  if (error) return { error: error.message }
-  return { success: true }
-}
 
 export async function getDetailedModuleProgress() {
   const supabase = await createClient()

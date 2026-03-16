@@ -1,8 +1,10 @@
-import React from 'react'
 import { Wind, Box, Zap, Cpu, Settings, Wrench, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
+import { createClient } from '@/utils/supabase/server'
 
-const Modules = () => {
+const Modules = async () => {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
   const modules = [
     { name: 'Aerodynamics', tests: 8, free: true, icon: <Wind className="w-6 h-6 text-primary" /> },
     { name: 'Aircraft Structures', tests: 12, free: true, icon: <Box className="w-6 h-6 text-primary" /> },
@@ -42,8 +44,8 @@ const Modules = () => {
               <p className="text-slate-500 font-medium mb-8 flex-grow leading-relaxed">
                 {module.tests} Practice tests available.
               </p>
-              <Link href="/signup" className="w-full py-4 rounded-xl text-primary font-black border-2 border-primary/10 hover:bg-primary hover:text-white transition-all text-sm uppercase tracking-widest active:scale-95 text-center">
-                Explore Tests
+              <Link href={user ? "/dashboard/modules" : "/signup"} className="w-full py-4 rounded-xl text-primary font-black border-2 border-primary/10 hover:bg-primary hover:text-white transition-all text-sm uppercase tracking-widest active:scale-95 text-center">
+                {user ? "Explore Modules" : "Explore Tests"}
               </Link>
             </div>
           ))}

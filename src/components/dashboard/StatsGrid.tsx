@@ -23,8 +23,8 @@ export default function StatsGrid({ stats }: StatsGridProps) {
 
   const statsItems = [
     { name: 'Tests Attempted', value: stats.testsTaken || '0', icon: ClipboardList, color: 'bg-primary/5 text-primary' },
-    { name: 'Average Score', value: stats.avgScore || '0%', icon: TrendingUp, color: 'bg-primary/5 text-primary' },
-    { name: 'Tests Passed', value: stats.testsPassed || '0', icon: Award, color: 'bg-primary/5 text-primary' },
+    // { name: 'Average Score', value: stats.avgScore || '0%', icon: TrendingUp, color: 'bg-primary/5 text-primary' },
+    // { name: 'Tests Passed', value: stats.testsPassed || '0', icon: Award, color: 'bg-primary/5 text-primary' },
     { name: 'Purchased Tests', value: stats.purchasedTests || '0', icon: Wallet, color: 'bg-primary/5 text-primary' },
   ]
 

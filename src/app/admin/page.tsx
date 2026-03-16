@@ -58,6 +58,7 @@ export default async function AdminDashboard() {
       icon: <DollarSign className="w-6 h-6 text-primary" />,
       bg: 'bg-primary/5' 
     },
+    /*
     { 
       label: 'Avg. Pass Rate', 
       value: dbStats.avgPassRate, 
@@ -65,6 +66,7 @@ export default async function AdminDashboard() {
       icon: <Activity className="w-6 h-6 text-primary" />,
       bg: 'bg-primary/5' 
     },
+    */
   ]
 
   return (
@@ -122,7 +124,7 @@ export default async function AdminDashboard() {
           </div>
         </div>
 
-        {/* Analytics */}
+        {/* Analytics - Hidden 
         <div className="lg:col-span-2 bg-primary p-8 rounded-3xl border border-primary-light shadow-2xl relative overflow-hidden flex flex-col text-white">
           <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
           <div className="relative z-10 w-full">
@@ -139,6 +141,7 @@ export default async function AdminDashboard() {
             <AnalyticsActions />
           </div>
         </div>
+        */}
       </div>
     </div>
   )

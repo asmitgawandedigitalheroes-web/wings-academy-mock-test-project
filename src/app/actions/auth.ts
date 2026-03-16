@@ -55,7 +55,8 @@ export async function signup(formData: FormData) {
     options: {
       data: {
         full_name: name
-      }
+      },
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/auth/callback?next=/dashboard`,
     }
   })
 

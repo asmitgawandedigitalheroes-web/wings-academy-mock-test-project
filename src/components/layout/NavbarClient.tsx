@@ -31,6 +31,7 @@ export default function NavbarClient({ user, role }: { user: any, role?: string 
 
   const navLinks = [
     { name: 'Home', href: '/' },
+    ...(user ? [{ name: 'Dashboard', href: '/dashboard' }] : []),
     { name: 'About', href: '/about' },
     { name: 'Pricing', href: '/pricing' },
     { name: 'Contact', href: '/contact' },
@@ -42,10 +43,10 @@ export default function NavbarClient({ user, role }: { user: any, role?: string 
         <div className="flex justify-between items-center">
           <Link href="/" className="flex items-center gap-3 group">
             <div className="relative w-12 h-12 flex items-center justify-center overflow-hidden group-hover:-translate-y-1 transition-transform">
-              <Image src="/logo.jpg" alt="Wings Academy Logo" fill className="object-contain" priority />
+              <Image src="/logo.png" alt="Wings Academy Logo" fill className="object-contain" priority />
             </div>
             <div className="flex flex-col">
-              <span className="text-xl font-black text-[#0f172a] leading-none tracking-tight">WINGS <span className="text-accent">ACADEMY</span></span>
+              <span className="text-xl font-black text-primary leading-none tracking-tight">WINGS <span className="text-accent">ACADEMY</span></span>
               <span className="text-[0.6rem] font-bold text-slate-500 uppercase tracking-widest mt-0.5">Prepare for Takeoff</span>
             </div>
           </Link>
@@ -55,14 +56,13 @@ export default function NavbarClient({ user, role }: { user: any, role?: string 
             {navLinks.map((link) => {
               const isActive = pathname === link.href
               return (
-                <Link 
-                  key={link.name} 
-                  href={link.href} 
-                  className={`px-2 py-1 font-bold transition-all duration-300 ${
-                    isActive 
-                    ? 'text-primary' 
-                    : 'text-slate-500 hover:text-primary'
-                  }`}
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  className={`px-2 py-1 font-bold transition-all duration-300 ${isActive
+                      ? 'text-primary'
+                      : 'text-slate-500 hover:text-primary'
+                    }`}
                 >
                   {link.name}
                 </Link>
@@ -79,7 +79,11 @@ export default function NavbarClient({ user, role }: { user: any, role?: string 
                       <Link href="/admin" className="text-[0.65rem] font-bold text-accent uppercase tracking-wider hover:underline mt-1">
                         Admin Panel
                       </Link>
-                    ) : null}
+                    ) : (
+                      <Link href="/dashboard" className="text-[0.65rem] font-bold text-accent uppercase tracking-wider hover:underline mt-1">
+                        Go to Dashboard
+                      </Link>
+                    )}
                   </div>
                   <button onClick={handleSignOut} className="text-slate-500 hover:text-red-500 transition-colors flex items-center gap-1 font-semibold">
                     <LogOut className="w-4 h-4" />
@@ -126,11 +130,10 @@ export default function NavbarClient({ user, role }: { user: any, role?: string 
                   <Link
                     key={link.name}
                     href={link.href}
-                    className={`block px-5 py-4 text-base font-bold transition-all ${
-                      isActive 
-                      ? 'text-primary' 
-                      : 'text-slate-600 hover:text-primary'
-                    }`}
+                    className={`block px-5 py-4 text-base font-bold transition-all ${isActive
+                        ? 'text-primary'
+                        : 'text-slate-600 hover:text-primary'
+                      }`}
                     onClick={() => setIsOpen(false)}
                   >
                     {link.name}

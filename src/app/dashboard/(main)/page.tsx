@@ -40,13 +40,15 @@ export default async function StudentDashboard() {
       {/* Quick Stats */}
       <StatsGrid stats={stats} />
 
-      {/* Main Content Grid */}
+{/* Main Content Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-10">
         <div className="xl:col-span-2 space-y-6 md:space-y-10">
+          {/* 
           <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-primary/5 min-h-[400px]">
             <PerformanceChart data={chartData} />
           </div>
-          <ModuleProgress data={progress} />
+          <ModuleProgress data={progress} /> 
+          */}
         </div>
 
         <div className="xl:col-span-1">

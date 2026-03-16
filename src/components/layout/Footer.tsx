@@ -1,9 +1,11 @@
-import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Plane, Twitter, Linkedin, Facebook, Mail, MapPin, Phone, Clock } from 'lucide-react'
+import { createClient } from '@/utils/supabase/server'
 
-const Footer = () => {
+const Footer = async () => {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
   return (
     <footer className="bg-primary text-white pt-24 pb-12 relative overflow-hidden">
       {/* Subtle top highlight */}
@@ -41,6 +43,9 @@ const Footer = () => {
             <h4 className="text-lg font-black mb-8 uppercase tracking-widest text-accent">Navigation</h4>
             <ul className="space-y-4 text-slate-400 font-bold text-decoration-none">
               <li><Link href="/" className="hover:text-white transition-colors">Home</Link></li>
+              {user && (
+                <li><Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link></li>
+              )}
               <li><Link href="/about" className="hover:text-white transition-colors">About</Link></li>
               <li><Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
               <li><Link href="/contact" className="hover:text-white transition-colors">Contact</Link></li>
