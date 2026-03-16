@@ -31,7 +31,7 @@ export default function NavbarClient({ user, role }: { user: any, role?: string 
 
   const navLinks = [
     { name: 'Home', href: '/' },
-    ...(user ? [{ name: 'Dashboard', href: '/dashboard' }] : []),
+    // ...(user ? [{ name: 'Dashboard', href: '/dashboard' }] : []),
     { name: 'About', href: '/about' },
     { name: 'Pricing', href: '/pricing' },
     { name: 'Contact', href: '/contact' },
@@ -60,8 +60,8 @@ export default function NavbarClient({ user, role }: { user: any, role?: string 
                   key={link.name}
                   href={link.href}
                   className={`px-2 py-1 font-bold transition-all duration-300 ${isActive
-                      ? 'text-primary'
-                      : 'text-slate-500 hover:text-primary'
+                    ? 'text-primary'
+                    : 'text-slate-500 hover:text-primary'
                     }`}
                 >
                   {link.name}
@@ -131,8 +131,8 @@ export default function NavbarClient({ user, role }: { user: any, role?: string 
                     key={link.name}
                     href={link.href}
                     className={`block px-5 py-4 text-base font-bold transition-all ${isActive
-                        ? 'text-primary'
-                        : 'text-slate-600 hover:text-primary'
+                      ? 'text-primary'
+                      : 'text-slate-600 hover:text-primary'
                       }`}
                     onClick={() => setIsOpen(false)}
                   >
