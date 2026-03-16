@@ -5,6 +5,7 @@ import { Mail, ArrowRight, ArrowLeft } from 'lucide-react'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { resetPasswordForEmail } from '../actions/auth'
+import SubmitButton from '@/components/common/SubmitButton'
 
 export default async function ForgotPasswordPage({
   searchParams,
@@ -25,10 +26,14 @@ export default async function ForgotPasswordPage({
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <Link href="/" className="flex justify-center items-center gap-3 group mb-8">
             <div className="relative w-16 h-16 flex items-center justify-center overflow-hidden group-hover:-translate-y-1 transition-transform">
-              <Image src="/logo.jpg" alt="Wings Academy Logo" fill className="object-contain" priority />
+              <Image src="/logo.png" alt="Wings Academy Logo" fill className="object-contain" priority />
+            </div>
+            <div className="flex flex-col items-start">
+              <span className="text-2xl font-black text-primary leading-none tracking-tight">WINGS <span className="text-accent">ACADEMY</span></span>
+              <span className="text-[0.65rem] font-bold text-slate-500 uppercase tracking-widest mt-1">Prepare for Takeoff</span>
             </div>
           </Link>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-[#0f172a]">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-primary">
             Reset your password
           </h2>
           <p className="mt-2 text-center text-sm text-slate-600">
@@ -70,13 +75,10 @@ export default async function ForgotPasswordPage({
               </div>
 
               <div className="flex flex-col gap-4 pt-2">
-                <button
-                  type="submit"
+                <SubmitButton
+                  label="Send Reset Link"
                   className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-xl shadow-lg shadow-primary/20 text-sm font-bold text-white bg-primary hover:bg-[#152e75] transition-all"
-                >
-                  Send Reset Link
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+                />
                 <Link
                   href="/login"
                   className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 bg-white hover:bg-slate-50 transition-all font-medium"

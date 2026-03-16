@@ -23,7 +23,7 @@ const navItems = [
   { name: 'Modules', icon: Library, href: '/dashboard/modules' },
   { name: 'My Tests', icon: ClipboardList, href: '/dashboard/my-tests' },
   // { name: 'Progress', icon: BarChart3, href: '/dashboard/progress' },
-  // { name: 'Results', icon: Award, href: '/dashboard/results' },
+  { name: 'Results', icon: Award, href: '/dashboard/results' },
   { name: 'Profile', icon: UserCircle, href: '/dashboard/profile' },
 ]
 
@@ -43,7 +43,7 @@ export default function DashboardSidebar({
       <div className="p-8 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3 group">
           <div className="relative w-10 h-10 flex items-center justify-center overflow-hidden">
-            <Image src="/logo.jpg" alt="Logo" fill className="object-contain" />
+            <Image src="/logo.png" alt="Logo" fill className="object-contain" />
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-black text-[#0f172a] leading-none tracking-tight">WINGS</span>

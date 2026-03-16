@@ -28,14 +28,14 @@ export default async function LoginPage({
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <Link href="/" className="flex justify-center items-center gap-3 group mb-8">
             <div className="relative w-16 h-16 flex items-center justify-center overflow-hidden group-hover:-translate-y-1 transition-transform">
-              <Image src="/logo.jpg" alt="Wings Academy Logo" fill className="object-contain" priority />
+              <Image src="/logo.png" alt="Wings Academy Logo" fill className="object-contain" priority />
             </div>
             <div className="flex flex-col items-start">
-              <span className="text-2xl font-black text-[#0f172a] leading-none tracking-tight">WINGS <span className="text-accent">ACADEMY</span></span>
+              <span className="text-2xl font-black text-primary leading-none tracking-tight">WINGS <span className="text-accent">ACADEMY</span></span>
               <span className="text-[0.65rem] font-bold text-slate-500 uppercase tracking-widest mt-1">Prepare for Takeoff</span>
             </div>
           </Link>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-[#0f172a]">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-primary">
             Log in to your account
           </h2>
 
@@ -102,7 +102,7 @@ export default async function LoginPage({
               </div>
 
               <div>
-                <SubmitButton 
+                <SubmitButton
                   label="Sign in"
                   loadingLabel="Signing in..."
                   className="w-full py-3 px-4 border border-transparent rounded-xl shadow-lg shadow-primary/20 text-sm font-bold text-white bg-primary hover:bg-[#152e75] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all"

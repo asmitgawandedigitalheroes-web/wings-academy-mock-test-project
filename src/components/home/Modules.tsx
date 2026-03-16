@@ -1,10 +1,8 @@
 import { Wind, Box, Zap, Cpu, Settings, Wrench, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
-import { createClient } from '@/utils/supabase/server'
+import LoadingButton from '@/components/common/LoadingButton'
 
-const Modules = async () => {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+const Modules = ({ user }: { user: any }) => {
   const modules = [
     { name: 'Aerodynamics', tests: 8, free: true, icon: <Wind className="w-6 h-6 text-primary" /> },
     { name: 'Aircraft Structures', tests: 12, free: true, icon: <Box className="w-6 h-6 text-primary" /> },
@@ -12,7 +10,7 @@ const Modules = async () => {
   ]
 
   return (
-    <section id="modules" className="py-20 bg-white border-t border-slate-100">
+    <section id="modules" className="py-20 bg-white border-t border-slate-100 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-4">
           <div>
@@ -44,9 +42,11 @@ const Modules = async () => {
               <p className="text-slate-500 font-medium mb-8 flex-grow leading-relaxed">
                 {module.tests} Practice tests available.
               </p>
-              <Link href={user ? "/dashboard/modules" : "/signup"} className="w-full py-4 rounded-xl text-primary font-black border-2 border-primary/10 hover:bg-primary hover:text-white transition-all text-sm uppercase tracking-widest active:scale-95 text-center">
-                {user ? "Explore Modules" : "Explore Tests"}
-              </Link>
+              <LoadingButton 
+                href={user ? "/dashboard/modules" : "/signup"} 
+                className="w-full py-4 rounded-xl text-primary font-black border-2 border-primary/10 hover:bg-primary hover:text-white transition-all text-sm uppercase tracking-widest active:scale-95 text-center"
+                label={user ? "Explore Modules" : "Explore Tests"}
+              />
             </div>
           ))}
         </div>

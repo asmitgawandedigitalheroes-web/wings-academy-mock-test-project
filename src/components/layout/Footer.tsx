@@ -16,7 +16,7 @@ const Footer = async () => {
           <div className="col-span-1 md:col-span-1">
             <Link href="/" className="flex items-center gap-3 group mb-8">
               <div className="relative w-14 h-14 flex items-center justify-center overflow-hidden group-hover:-translate-y-1 transition-transform">
-                <Image src="/logo.jpg" alt="Wings Academy Logo" fill className="object-contain" />
+                <Image src="/logo.png" alt="Wings Academy Logo" fill className="object-contain" />
               </div>
               <div className="flex flex-col">
                 <span className="text-2xl font-black text-white leading-none tracking-tight">WINGS <span className="text-accent">ACADEMY</span></span>
@@ -86,7 +86,15 @@ const Footer = async () => {
 
         <div className="border-t border-white/5 pt-12 flex flex-col md:flex-row justify-between items-center text-slate-500 text-sm font-bold tracking-wide">
           <p>© {new Date().getFullYear()} Wings Academy. All rights reserved.</p>
-          <p className="mt-4 md:mt-0 flex items-center gap-2">Privacy policy | Terms of service | Cookie policy | Disclaimer</p>
+          <div className="mt-4 md:mt-0 flex items-center gap-2">
+            <Link href="/privacy-policy" className="hover:text-white transition-colors">Privacy policy</Link>
+            <span> | </span>
+            <Link href="/terms-of-service" className="hover:text-white transition-colors">Terms of service</Link>
+            <span> | </span>
+            <Link href="/cookie-policy" className="hover:text-white transition-colors">Cookie policy</Link>
+            <span> | </span>
+            <Link href="/disclaimer" className="hover:text-white transition-colors">Disclaimer</Link>
+          </div>
         </div>
       </div>
     </footer>

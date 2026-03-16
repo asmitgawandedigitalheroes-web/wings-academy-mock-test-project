@@ -9,20 +9,24 @@ import PerformanceSection from '@/components/home/PerformanceSection'
 import ExcellenceSection from '@/components/home/ExcellenceSection'
 import DashboardPreview from '@/components/home/DashboardPreview'
 import FinalCTA from '@/components/home/FinalCTA'
+import { createClient } from '@/utils/supabase/server'
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
   return (
     <main className="min-h-screen">
       <Navbar />
-      <Hero />
+      <Hero user={user} />
       <Stats />
       <HowItWorks />
       <Features />
       <PerformanceSection />
       <ExcellenceSection />
-      <Modules />
+      <Modules user={user} />
       <DashboardPreview />
-      <FinalCTA />
+      <FinalCTA user={user} />
       <Footer />
     </main>
   )

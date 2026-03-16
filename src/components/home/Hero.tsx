@@ -1,11 +1,9 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRight, BookOpen } from 'lucide-react'
-import { createClient } from '@/utils/supabase/server'
+import LoadingButton from '@/components/common/LoadingButton'
 
-const Hero = async () => {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+const Hero = ({ user }: { user: any }) => {
 
   return (
     <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 bg-[#f8fafc] overflow-hidden">
@@ -20,21 +18,33 @@ const Hero = async () => {
             <div className="inline-block py-1.5 px-4 rounded-full bg-primary/10 text-primary font-black text-xs mb-6 uppercase tracking-[0.2em] border border-primary/5">
               Trusted by Future Engineers
             </div>
-            <h1 className="text-4xl md:text-5xl lg:text-7xl font-black text-primary leading-[1.1] mb-6 tracking-tight">
-              Master you Aircraft Maintenance Engineering Exams <span className="text-accent">Precision</span> Mock Tests
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-black text-primary leading-[1.1] mb-6 tracking-tight">
+              Master your Aircraft Maintenance Engineering Exams <span className="text-accent">Precision</span> Mock Tests
             </h1>
             <p className="text-lg md:text-xl text-slate-600 mb-10 max-w-2xl mx-auto lg:mx-0 font-medium leading-relaxed">
               Practice real exam-style questions for EASA, GCAA, and DGCA certifications. Simple, mobile-friendly preparation that guarantees success.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
-              <Link href={user ? "/dashboard" : "/signup"} className="w-full sm:w-auto bg-primary text-white px-10 py-5 rounded-2xl font-black text-lg hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-xl shadow-primary/20">
-                {user ? "Go to Dashboard" : "Start Free Tests"}
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-              <Link href="#modules" className="w-full sm:w-auto bg-white text-primary border-2 border-slate-100 shadow-xl shadow-slate-200/50 px-10 py-5 rounded-2xl font-black text-lg hover:bg-slate-50 active:scale-95 transition-all flex items-center justify-center gap-2">
-                <BookOpen className="w-5 h-5" />
-                View Modules
-              </Link>
+              <LoadingButton
+                href={user ? "/dashboard" : "/signup"}
+                className="w-full sm:w-auto bg-primary text-white px-10 py-5 rounded-2xl font-black text-lg hover:brightness-110 active:scale-95 transition-all shadow-xl shadow-primary/20"
+                label={
+                  <>
+                    {user ? "Go to Dashboard" : "Start Free Tests"}
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </>
+                }
+              />
+              <LoadingButton
+                href="#modules"
+                className="w-full sm:w-auto bg-white text-primary border-2 border-slate-100 shadow-xl shadow-slate-200/50 px-10 py-5 rounded-2xl font-black text-lg hover:bg-slate-50 active:scale-95 transition-all"
+                label={
+                  <>
+                    <BookOpen className="w-5 h-5 mr-2" />
+                    View Modules
+                  </>
+                }
+              />
             </div>
           </div>
 

@@ -3,6 +3,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
+import { getURL } from '@/utils/url'
 
 export async function addModule(formData: { 
   name: string, 
@@ -1172,7 +1173,7 @@ export async function updateAdminCredentials(data: { email?: string, password?: 
   }
 
   const { error } = await supabase.auth.updateUser(updatePayload, {
-    emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/auth/callback?next=/admin/settings`,
+    emailRedirectTo: `${getURL()}api/auth/callback?next=/admin/settings`,
   })
 
   if (error) {

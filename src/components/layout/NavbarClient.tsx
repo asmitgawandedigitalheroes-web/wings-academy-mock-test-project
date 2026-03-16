@@ -12,6 +12,7 @@ import { signout } from '@/app/actions/auth'
 export default function NavbarClient({ user, role }: { user: any, role?: string }) {
   const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [isSigningOut, setIsSigningOut] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
   const supabase = createClient()
@@ -25,13 +26,17 @@ export default function NavbarClient({ user, role }: { user: any, role?: string 
   }, [])
 
   const handleSignOut = async () => {
-    await signout()
-    router.refresh()
+    setIsSigningOut(true)
+    try {
+      await signout()
+      router.refresh()
+    } finally {
+      setIsSigningOut(false)
+    }
   }
 
   const navLinks = [
     { name: 'Home', href: '/' },
-    // ...(user ? [{ name: 'Dashboard', href: '/dashboard' }] : []),
     { name: 'About', href: '/about' },
     { name: 'Pricing', href: '/pricing' },
     { name: 'Contact', href: '/contact' },
@@ -39,7 +44,7 @@ export default function NavbarClient({ user, role }: { user: any, role?: string 
 
   return (
     <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'glass py-3' : 'bg-transparent py-5'}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-6 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center">
           <Link href="/" className="flex items-center gap-3 group">
             <div className="relative w-12 h-12 flex items-center justify-center overflow-hidden group-hover:-translate-y-1 transition-transform">
@@ -85,8 +90,16 @@ export default function NavbarClient({ user, role }: { user: any, role?: string 
                       </Link>
                     )}
                   </div>
-                  <button onClick={handleSignOut} className="text-slate-500 hover:text-red-500 transition-colors flex items-center gap-1 font-semibold">
-                    <LogOut className="w-4 h-4" />
+                  <button 
+                    onClick={handleSignOut} 
+                    disabled={isSigningOut}
+                    className={`text-slate-500 hover:text-red-500 transition-colors flex items-center gap-1 font-semibold ${isSigningOut ? 'opacity-50 cursor-wait' : ''}`}
+                  >
+                    {isSigningOut ? (
+                      <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <LogOut className="w-4 h-4" />
+                    )}
                   </button>
                 </>
               ) : (
@@ -146,7 +159,14 @@ export default function NavbarClient({ user, role }: { user: any, role?: string 
                     <div className="px-3 py-2 font-semibold text-primary border-b border-slate-200">
                       Logged in as {user.user_metadata?.full_name || user.email?.split('@')[0]}
                     </div>
-                    <button onClick={() => { handleSignOut(); setIsOpen(false); }} className="w-full flex justify-center text-red-500 hover:bg-red-50 border border-red-200 px-6 py-3 rounded-xl font-bold transition-colors">
+                    <button 
+                      onClick={() => { handleSignOut(); setIsOpen(false); }} 
+                      disabled={isSigningOut}
+                      className="w-full flex justify-center items-center gap-2 text-red-500 hover:bg-red-50 border border-red-200 px-6 py-3 rounded-xl font-bold transition-all disabled:opacity-50"
+                    >
+                      {isSigningOut && (
+                        <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+                      )}
                       Sign Out
                     </button>
                   </>

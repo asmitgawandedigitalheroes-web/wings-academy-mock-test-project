@@ -28,14 +28,14 @@ export default async function SignupPage({
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
           <Link href="/" className="flex justify-center items-center gap-3 group mb-8">
             <div className="relative w-16 h-16 flex items-center justify-center overflow-hidden group-hover:-translate-y-1 transition-transform">
-              <Image src="/logo.jpg" alt="Wings Academy Logo" fill className="object-contain" priority />
+              <Image src="/logo.png" alt="Wings Academy Logo" fill className="object-contain" priority />
             </div>
             <div className="flex flex-col items-start">
-              <span className="text-2xl font-black text-[#0f172a] leading-none tracking-tight">WINGS <span className="text-accent">ACADEMY</span></span>
+              <span className="text-2xl font-black text-primary leading-none tracking-tight">WINGS <span className="text-accent">ACADEMY</span></span>
               <span className="text-[0.65rem] font-bold text-slate-500 uppercase tracking-widest mt-1">Prepare for Takeoff</span>
             </div>
           </Link>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-[#0f172a]">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-primary">
             Start your journey today
           </h2>
 
@@ -106,18 +106,18 @@ export default async function SignupPage({
                 />
                 <label htmlFor="terms" className="ml-2 block text-sm text-slate-600 cursor-pointer">
                   I agree to the{' '}
-                  <a href="#" className="font-bold text-primary hover:underline hover:text-accent transition-colors">
+                  <Link href="/terms-of-service" className="font-bold text-primary hover:underline hover:text-accent transition-colors">
                     Terms of Service
-                  </a>{' '}
+                  </Link>{' '}
                   and{' '}
-                  <a href="#" className="font-bold text-primary hover:underline hover:text-accent transition-colors">
+                  <Link href="/privacy-policy" className="font-bold text-primary hover:underline hover:text-accent transition-colors">
                     Privacy Policy
-                  </a>
+                  </Link>
                 </label>
               </div>
 
               <div>
-                <SubmitButton 
+                <SubmitButton
                   label="Create Account"
                   loadingLabel="Creating Account..."
                   className="w-full py-3 px-4 border border-transparent rounded-xl shadow-lg shadow-accent/20 text-sm font-bold text-[#0f172a] bg-accent hover:bg-[#dca500] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent transition-all"

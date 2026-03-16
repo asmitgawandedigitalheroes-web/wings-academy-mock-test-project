@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
+import { getURL } from '@/utils/url'
 
 export async function login(formData: FormData) {
   const supabase = await createClient()
@@ -56,7 +57,7 @@ export async function signup(formData: FormData) {
       data: {
         full_name: name
       },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/auth/callback?next=/dashboard`,
+      emailRedirectTo: `${getURL()}api/auth/callback?next=/dashboard`,
     }
   })
 
@@ -84,7 +85,7 @@ export async function resetPasswordForEmail(formData: FormData) {
   const email = formData.get('email') as string
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/auth/callback?next=/reset-password`,
+    redirectTo: `${getURL()}api/auth/callback?next=/reset-password`,
   })
 
   if (error) {

@@ -75,7 +75,7 @@ export default function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
         <div className="p-6 border-b border-slate-800">
           <Link href="/admin" className="flex items-center gap-3 group">
             <div className="relative w-10 h-10 flex items-center justify-center overflow-hidden bg-white rounded-lg">
-              <Image src="/logo.jpg" alt="Logo" fill className="object-contain" />
+              <Image src="/logo.png" alt="Logo" fill className="object-contain" />
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-black text-white leading-none tracking-tight">WINGS</span>

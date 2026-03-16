@@ -17,23 +17,28 @@ import {
   BarChart as BarChartIcon,
   Clock
 } from 'lucide-react'
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  Cell,
-  PieChart,
-  Pie,
-  LineChart,
-  Line,
-  AreaChart,
-  Area
-} from 'recharts'
+import dynamic from 'next/dynamic'
 import { getAdminAnalytics, getAdminDashboardStats } from '@/app/actions/admin_dashboard'
+
+const EngagementChart = dynamic(() => import('@/components/admin/EngagementChart'), { 
+    ssr: false,
+    loading: () => <div className="w-full h-full bg-slate-50 animate-pulse rounded-3xl" />
+})
+
+const DistributionChart = dynamic(() => import('@/components/admin/DistributionChart'), { 
+    ssr: false,
+    loading: () => <div className="w-full h-full bg-slate-50 animate-pulse rounded-full" />
+})
+
+const RevenueChart = dynamic(() => import('@/components/admin/RevenueChart'), { 
+    ssr: false,
+    loading: () => <div className="w-full h-full bg-slate-50 animate-pulse rounded-3xl" />
+})
+
+const ActivityHoursChart = dynamic(() => import('@/components/admin/ActivityHoursChart'), { 
+    ssr: false,
+    loading: () => <div className="w-full h-full bg-slate-50 animate-pulse rounded-3xl" />
+})
 
 export default function AnalyticsPage() {
   const [stats, setStats] = useState<any>(null)
@@ -179,55 +184,7 @@ export default function AnalyticsPage() {
                         </div>
                     </div>
                     <div className="h-[350px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={analyticsData?.engagement}>
-                                <defs>
-                                    <linearGradient id="colorSignups" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#1E3A8A" stopOpacity={0.1}/>
-                                        <stop offset="95%" stopColor="#1E3A8A" stopOpacity={0}/>
-                                    </linearGradient>
-                                    <linearGradient id="colorTests" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#EAB308" stopOpacity={0.1}/>
-                                        <stop offset="95%" stopColor="#EAB308" stopOpacity={0}/>
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                <XAxis 
-                                    dataKey="date" 
-                                    axisLine={false} 
-                                    tickLine={false} 
-                                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 'bold' }}
-                                    dy={10}
-                                />
-                                <YAxis 
-                                    axisLine={false} 
-                                    tickLine={false} 
-                                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 'bold' }}
-                                />
-                                <Tooltip 
-                                    contentStyle={{ 
-                                        backgroundColor: '#fff', 
-                                        borderRadius: '16px', 
-                                        border: '1px solid #f1f5f9',
-                                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05)'
-                                    }}
-                                />
-                                <Area 
-                                    type="monotone" 
-                                    dataKey="signups" 
-                                    stroke="#1E3A8A" 
-                                    strokeWidth={3}
-                                    fill="url(#colorSignups)" 
-                                />
-                                <Area 
-                                    type="monotone" 
-                                    dataKey="completions" 
-                                    stroke="#EAB308" 
-                                    strokeWidth={3}
-                                    fill="url(#colorTests)" 
-                                />
-                            </AreaChart>
-                        </ResponsiveContainer>
+                        <EngagementChart data={analyticsData?.engagement} />
                     </div>
                 </div>
 
@@ -237,22 +194,7 @@ export default function AnalyticsPage() {
                     <p className="text-white/40 text-sm font-medium mb-8">Test distribution by module</p>
                     
                     <div className="flex-1 min-h-[250px] relative">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={analyticsData?.distribution}
-                                    innerRadius={70}
-                                    outerRadius={90}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                >
-                                    {analyticsData?.distribution?.map((entry: any, index: number) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip />
-                            </PieChart>
-                        </ResponsiveContainer>
+                        <DistributionChart data={analyticsData?.distribution} colors={COLORS} />
                         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                             <span className="text-3xl font-black">Split</span>
                             <span className="text-[10px] uppercase font-black tracking-widest text-white/40">Database</span>
@@ -283,26 +225,7 @@ export default function AnalyticsPage() {
                         Revenue Stream
                     </h3>
                     <div className="h-[250px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={analyticsData?.engagement}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                <XAxis dataKey="date" 
-                                    axisLine={false} 
-                                    tickLine={false} 
-                                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 'bold' }} 
-                                />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 10, fontWeight: 'bold' }} />
-                                <Tooltip />
-                                <Line 
-                                    type="monotone" 
-                                    dataKey="revenue" 
-                                    name="Revenue"
-                                    stroke="#EAB308" 
-                                    strokeWidth={4}
-                                    dot={{ r: 4, fill: '#EAB308', strokeWidth: 2, stroke: '#fff' }}
-                                />
-                            </LineChart>
-                        </ResponsiveContainer>
+                        <RevenueChart data={analyticsData?.engagement} />
                     </div>
                 </div>
 
@@ -315,15 +238,7 @@ export default function AnalyticsPage() {
                         Peak Activity Hours
                     </h3>
                     <div className="h-[250px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={analyticsData?.hours}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                <XAxis dataKey="hour" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold' }} />
-                                <YAxis hide />
-                                <Tooltip cursor={{ fill: '#f8fafc' }} />
-                                <Bar dataKey="users" fill="#1E3A8A" radius={[10, 10, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
+                        <ActivityHoursChart data={analyticsData?.hours} />
                     </div>
                 </div>
             </div>
