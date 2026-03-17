@@ -1,4 +1,10 @@
 import React from 'react'
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: "Pricing",
+  description: "Flexible pricing plans for Aircraft Maintenance Engineers. Buy individual modules and get access to premium mock tests for your certification success.",
+};
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import PricingComponent from '@/components/home/Pricing'

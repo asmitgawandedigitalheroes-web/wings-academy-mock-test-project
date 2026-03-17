@@ -28,15 +28,20 @@ export default async function ResultSummaryPage({ params }: PageProps) {
           isPassed ? 'bg-accent/5 border-accent/10 shadow-accent/5' : 'bg-primary/5 border-primary/10 shadow-primary/5'
       }`}>
           <div className={`w-24 h-24 rounded-3xl flex items-center justify-center mb-8 text-5xl shadow-xl transition-transform hover:scale-110 ${
-                isPassed ? 'bg-white text-accent' : 'bg-white text-primary'
+                result.isViolation ? 'bg-white text-primary' : (isPassed ? 'bg-white text-accent' : 'bg-white text-primary')
           }`}>
-              {isPassed ? <CheckCircle2 className="w-12 h-12" /> : <XCircle className="w-12 h-12" />}
+              {result.isViolation ? <XCircle className="w-12 h-12" /> : (isPassed ? <CheckCircle2 className="w-12 h-12" /> : <XCircle className="w-12 h-12" />)}
           </div>
-          <h1 className="text-4xl font-black text-[#0f172a] mb-2">{result.showScore ? `Test ${result.status}!` : 'Test Completed!'}</h1>
+          <h1 className="text-4xl font-black text-[#0f172a] mb-2">
+            {result.isViolation ? 'Test Terminated!' : (result.showScore ? `Test ${result.status}!` : 'Test Completed!')}
+          </h1>
           <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">
-              {result.showScore 
-                ? (isPassed ? 'Excellent work! You have cleared the benchmark.' : 'Don\'t give up! Practice more to improve your score.')
-                : 'Your submission has been received. Thank you for taking the test.'
+              {result.isViolation 
+                ? 'Your test was terminated due to multiple security violations.'
+                : (result.showScore 
+                  ? (isPassed ? 'Excellent work! You have cleared the benchmark.' : 'Don\'t give up! Practice more to improve your score.')
+                  : 'Your submission has been received. Thank you for taking the test.'
+                )
               }
           </p>
           
@@ -104,84 +109,6 @@ export default async function ResultSummaryPage({ params }: PageProps) {
           </div>
       </div>
 
-      {/* Review Section */}
-      {result.reviewItems && result.reviewItems.length > 0 && (
-          <div className="space-y-6">
-              <div className="flex items-center gap-3 ml-2">
-                  <BarChart3 className="w-5 h-5 text-primary" />
-                  <h2 className="text-xl font-black text-[#0f172a] uppercase tracking-tight">Question Review</h2>
-              </div>
-              
-              <div className="grid grid-cols-1 gap-6">
-                  {result.reviewItems.map((item: any, idx: number) => {
-                      const isCorrect = item.isCorrect
-                      const showAnswer = result.showAnswers
-                      const showExplanation = result.showExplanation
-
-                      return (
-                          <div key={item.id} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-primary/5 overflow-hidden">
-                              <div className="p-8 space-y-6">
-                                  <div className="flex items-start justify-between gap-4">
-                                      <div className="flex items-start gap-4">
-                                            <span className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center font-black text-slate-400 shrink-0">
-                                                {idx + 1}
-                                            </span>
-                                            <h4 className="text-lg font-bold text-[#0f172a] leading-relaxed pt-2">
-                                                {item.questionText}
-                                            </h4>
-                                      </div>
-                                      {showAnswer && (
-                                          <div className={`px-4 py-2 rounded-xl border font-black text-[0.6rem] uppercase tracking-widest shrink-0 ${
-                                              isCorrect ? 'bg-green-50 border-green-100 text-green-600' : 'bg-red-50 border-red-100 text-red-600'
-                                          }`}>
-                                              {isCorrect ? 'Correct' : 'Incorrect'}
-                                          </div>
-                                      )}
-                                  </div>
-
-                                  <div className="grid grid-cols-1 gap-3 ml-14">
-                                      {item.options.map((option: string, oIdx: number) => {
-                                          const isSelected = item.selectedOption === oIdx
-                                          const isCorrectOption = item.correctOption === oIdx
-                                          
-                                          let btnClass = "bg-slate-50 border-slate-100 text-slate-500"
-                                          if (showAnswer) {
-                                              if (isCorrectOption) btnClass = "bg-green-50 border-green-200 text-green-700 ring-1 ring-green-200"
-                                              else if (isSelected && !isCorrectOption) btnClass = "bg-red-50 border-red-200 text-red-700 ring-1 ring-red-200"
-                                          } else if (isSelected) {
-                                              btnClass = "bg-primary/5 border-primary/20 text-primary"
-                                          }
-
-                                          return (
-                                              <div key={oIdx} className={`p-4 rounded-2xl border flex items-center gap-4 transition-all ${btnClass}`}>
-                                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs shrink-0 ${
-                                                      isSelected ? 'bg-current text-white' : 'bg-white border border-slate-100'
-                                                  }`}>
-                                                      {String.fromCharCode(65 + oIdx)}
-                                                  </div>
-                                                  <span className="font-bold text-sm">{option}</span>
-                                                  {showAnswer && isSelected && !isCorrectOption && <XCircle className="w-4 h-4 ml-auto" />}
-                                                  {showAnswer && isCorrectOption && <CheckCircle2 className="w-4 h-4 ml-auto" />}
-                                              </div>
-                                          )
-                                      })}
-                                  </div>
-
-                                  {showExplanation && item.explanation && (
-                                      <div className="ml-14 p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                                          <p className="text-[0.6rem] font-black text-primary uppercase tracking-[0.2em] mb-2">Explanation</p>
-                                          <p className="text-sm font-medium text-slate-500 leading-relaxed italic">
-                                              {item.explanation}
-                                          </p>
-                                      </div>
-                                  )}
-                              </div>
-                          </div>
-                      )
-                  })}
-              </div>
-          </div>
-      )}
     </div>
   )
 }

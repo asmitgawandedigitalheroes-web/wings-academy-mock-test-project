@@ -224,7 +224,7 @@ export default function ModuleDetailPage() {
                 
                 <div className="flex flex-wrap gap-3 mt-6 pt-6 border-t border-slate-50">
                   <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-xl">
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{test.test_type === 'short' ? 'Short Length' : 'Full Length'}</span>
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{test.test_type === 'short' ? 'Free Test' : 'Full Length'}</span>
                   </div>
                   <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-xl">
                     <Clock className="w-3.5 h-3.5 text-slate-400" />

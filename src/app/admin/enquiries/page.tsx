@@ -140,7 +140,7 @@ export default function AdminEnquiriesPage() {
             </div>
 
             {/* List */}
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto no-scrollbar">
               {loading ? (
                 <div className="p-12 text-center">
                   <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>

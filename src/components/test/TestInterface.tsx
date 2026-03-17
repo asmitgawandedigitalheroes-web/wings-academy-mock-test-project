@@ -10,10 +10,16 @@ import {
   Flag,
   RotateCcw,
   ArrowLeft,
-  PenTool
+  PenTool,
+  Shield,
+  Layout,
+  MousePointer,
+  Monitor,
+  Maximize
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { startTestSession, updateTestProgress, finalizeTest, getSessionProgress } from '@/app/actions/dashboard'
+import { useAntiCheat } from '@/hooks/useAntiCheat'
 
 interface TestInterfaceProps {
   test: {
@@ -46,13 +52,47 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
   const [isExamStarted, setIsExamStarted] = useState(false)
   const [startConfirmText, setStartConfirmText] = useState('')
   const [isAutoSubmitting, setIsAutoSubmitting] = useState(false)
+  const [isViolationTerminated, setIsViolationTerminated] = useState(false)
+
+  // Anti-cheat system
+  const {
+    violations,
+    isFullscreen,
+    showWarning,
+    warningMessage,
+    isTerminated,
+    violationCount,
+    maxViolations,
+    requestFullscreen,
+    exitFullscreen,
+    logViolation
+  } = useAntiCheat({
+    userId: user?.id || 'guest',
+    examId: test.id,
+    userEmail: user?.email,
+    config: {
+      enablePrintScreenDetection: true,
+      enableTabSwitchDetection: true,
+      enableFullscreenMode: true,
+      enableRightClickBlock: true,
+      enableTextSelectionBlock: true,
+      enableCopyPasteDetection: true,
+      enableWatermark: true,
+      maxViolations: 5
+    },
+    onMaxViolationsReached: () => {
+      handleSubmit(false, true)
+    }
+  })
 
   // Question randomization state
   const [shuffledQuestions, setShuffledQuestions] = useState<any[]>([])
   const [shuffledOptions, setShuffledOptions] = useState<Record<string, any[]>>({})
 
   const originalQuestions = test.questions || []
-  const currentQuestion = shuffledQuestions[currentQuestionIdx] || originalQuestions[currentQuestionIdx]
+  const currentQuestion = shuffledQuestions.length > 0 
+    ? shuffledQuestions[currentQuestionIdx] 
+    : originalQuestions[currentQuestionIdx]
   const isTimeExpiredRef = useRef(false)
   const hasSubmittedRef = useRef(false)
 
@@ -63,7 +103,7 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
     return `${hrs > 0 ? hrs + ':' : ''}${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
 
-  const handleSubmit = useCallback(async (isAutoSubmit = false) => {
+  const handleSubmit = useCallback(async (isAutoSubmit = false, isViolation = false) => {
     if (hasSubmittedRef.current || !sessionId) return
     if (isSubmitting && !isAutoSubmit) return
 
@@ -75,14 +115,18 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
       setIsAutoSubmitting(true)
     }
 
+    if (isViolation) {
+      setIsViolationTerminated(true)
+    }
+
     try {
-      const response: any = await finalizeTest(sessionId)
+      const response: any = await finalizeTest(sessionId, isViolation)
       if (response.success) {
         sessionStorage.removeItem(`test_session_${test.id}`)
-        const resultUrl = `/dashboard/results/${response.resultId}`
-        router.push(resultUrl)
-      } else if (response.resultId) {
-        sessionStorage.removeItem(`test_session_${test.id}`)
+        
+        if (isViolation) return
+
+        await exitFullscreen()
         router.push(`/dashboard/results/${response.resultId}`)
       } else {
         hasSubmittedRef.current = false
@@ -96,7 +140,7 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
     } finally {
       setIsSubmitting(false)
     }
-  }, [sessionId, isSubmitting, router, test.id])
+  }, [sessionId, isSubmitting, router, test.id, exitFullscreen])
 
   // Timer logic
   useEffect(() => {
@@ -126,7 +170,8 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
   useEffect(() => {
     if (!isExamStarted) return
 
-    const seedString = `${user?.id || 'guest'}-${test.id}-${Date.now()}`
+    // Use sessionId for seed if available to keep order consistent on refresh
+    const seedString = `${sessionId || 'new'}-${user?.id || 'guest'}-${test.id}`
     let seed = 0
     for (let i = 0; i < seedString.length; i++) {
       seed = (seed << 5) - seed + seedString.charCodeAt(i)
@@ -150,7 +195,7 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
     // Shuffle Options
     const shuffledOpts: Record<string, any[]> = {}
     shuffled.forEach((q: any) => {
-      if (q.options && q.options.length > 0) {
+      if (q && q.options && Array.isArray(q.options) && q.options.length > 0) {
         const optIndices = q.options.map((_: any, i: number) => i)
         for (let i = optIndices.length - 1; i > 0; i--) {
           const j = Math.floor(seededRandom() * (i + 1))
@@ -159,7 +204,7 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
         shuffledOpts[q.id] = optIndices.map((i: number) => {
           const opt = q.options![i]
           return {
-            text: typeof opt === 'string' ? opt : opt.text,
+            text: opt ? (typeof opt === 'string' ? opt : opt.text || '') : '',
             originalIndex: i
           }
         })
@@ -170,7 +215,8 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
 
   // Track visited questions
   useEffect(() => {
-    if (isExamStarted && currentQuestion?.id) {
+    // Only track if shuffledQuestions is populated to avoid race conditions
+    if (isExamStarted && currentQuestion?.id && shuffledQuestions.length > 0) {
       setVisitedQuestions(prev => {
         if (prev.has(currentQuestion.id)) return prev
         const next = new Set(prev)
@@ -178,7 +224,7 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
         return next
       })
     }
-  }, [isExamStarted, currentQuestionIdx, currentQuestion?.id])
+  }, [isExamStarted, currentQuestionIdx, currentQuestion?.id, shuffledQuestions.length])
 
   const saveProgress = useCallback(async (qId: string, selection: number | number[] | null, flagged: boolean) => {
     if (!sessionId) return
@@ -266,6 +312,10 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
     if (startConfirmText.toUpperCase() === 'START') {
       setIsSubmitting(true)
       try {
+        // Request fullscreen INSTANTLY on user gesture
+        // Async calls below (like startTestSession) will break the gesture context
+        requestFullscreen()
+
         if (!sessionId) {
           const res = await startTestSession(test.id)
           if (res.sessionId) {
@@ -297,8 +347,31 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
   }
 
   if (!isExamStarted) {
+    const instructions = [
+      {
+        icon: <Maximize className="w-5 h-5" />,
+        title: "Fullscreen Mode",
+        text: "The exam will run in fullscreen mode. Exiting fullscreen will be logged as a violation."
+      },
+      {
+        icon: <Layout className="w-5 h-5" />,
+        title: "Tab Switching",
+        text: "Switching tabs or minimizing the window is strictly prohibited and monitored."
+      },
+      {
+        icon: <MousePointer className="w-5 h-5" />,
+        title: "Interactions",
+        text: "Right-click and text selection are disabled. Screenshot attempts will be detected."
+      },
+      {
+        icon: <Monitor className="w-5 h-5" />,
+        title: "Single Screen",
+        text: "Please use only one monitor. Extended displays are not allowed during the exam."
+      }
+    ]
+
     return (
-      <div className="max-w-5xl mx-auto space-y-12 pb-20 pt-12 px-6">
+      <div className="max-w-6xl mx-auto space-y-12 pb-20 pt-12 px-6">
         <div className="flex items-center justify-between">
           <button
             onClick={() => router.push('/dashboard/modules')}
@@ -308,54 +381,127 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
           </button>
         </div>
 
-        <div className="bg-white p-10 md:p-20 rounded-[3.5rem] border border-slate-100 shadow-2xl relative overflow-hidden">
-          <div className="flex flex-col md:flex-row md:items-start justify-between gap-10 mb-16 relative z-10">
-            <div className="space-y-4 max-w-2xl">
-              <h1 className="text-4xl md:text-6xl font-black text-[#0f172a] tracking-tight uppercase">{test.title}</h1>
-              <p className="text-slate-400 text-lg font-medium pt-2 leading-relaxed">
-                {test.description || 'Please read the instructions carefully before starting the exam.'}
-              </p>
-            </div>
-            <div className="w-24 h-24 bg-primary/10 rounded-[2.5rem] flex items-center justify-center text-primary">
-              <PenTool className="w-10 h-10" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-16 relative z-10">
-            {[
-              { label: 'Questions', value: originalQuestions.length },
-              { label: 'Marks/Q', value: test.marks_per_question || 1 },
-              { label: 'Duration', value: `${test.time_limit_minutes} Min` },
-              { label: 'Total Marks', value: originalQuestions.length * (test.marks_per_question || 1) }
-            ].map((stat, i) => (
-              <div key={i} className="p-8 bg-slate-50 border border-slate-100 rounded-[2rem]">
-                <p className="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest">{stat.label}</p>
-                <p className="text-2xl font-black text-[#0f172a]">{stat.value}</p>
+        <div className="bg-white p-8 md:p-16 rounded-[3.5rem] border border-slate-100 shadow-2xl relative overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+            {/* Left Section: Details */}
+            <div className="space-y-12">
+              <div className="space-y-6">
+                <div className="w-20 h-20 bg-primary/10 rounded-[2rem] flex items-center justify-center text-primary">
+                  <PenTool className="w-10 h-10" />
+                </div>
+                <h1 className="text-4xl md:text-5xl font-black text-[#0f172a] tracking-tight uppercase leading-tight">
+                  {test.title}
+                </h1>
+                <p className="text-slate-500 text-lg font-medium leading-relaxed">
+                  {test.description || 'Please review the following instructions carefully before you begin your examination.'}
+                </p>
               </div>
-            ))}
+
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { label: 'Questions', value: originalQuestions.length },
+                  { label: 'Marks/Q', value: test.marks_per_question || 1 },
+                  { label: 'Duration', value: `${test.time_limit_minutes} Min` },
+                  { label: 'Total Marks', value: originalQuestions.length * (test.marks_per_question || 1) }
+                ].map((stat, i) => (
+                  <div key={i} className="p-6 bg-slate-50 border border-slate-100 rounded-[1.5rem]">
+                    <p className="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
+                    <p className="text-xl font-black text-[#0f172a]">{stat.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-8 pt-4">
+                <div className="space-y-4">
+                  <label className="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest ml-1">
+                    Type <span className="text-primary font-black">START</span> to confirm
+                  </label>
+                  <input
+                    type="text"
+                    value={startConfirmText}
+                    onChange={(e) => setStartConfirmText(e.target.value)}
+                    placeholder="ENTER START"
+                    className="w-full px-8 py-5 bg-slate-50 border border-slate-200 rounded-3xl font-black text-sm tracking-widest focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all uppercase"
+                  />
+                </div>
+                <button
+                  onClick={handleStartExam}
+                  disabled={startConfirmText.toUpperCase() !== 'START' || isSubmitting}
+                  className="w-full bg-primary text-white py-6 rounded-3xl font-black text-xs uppercase tracking-[0.3em] hover:bg-slate-900 transition-all disabled:opacity-20 shadow-xl shadow-primary/20 flex items-center justify-center gap-4 group"
+                >
+                  {isSubmitting ? 'Starting...' : 'Start Exam'} <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </button>
+              </div>
+            </div>
+
+            {/* Right Section: Instructions */}
+            <div className="bg-slate-50/50 rounded-[2.5rem] p-8 md:p-10 border border-slate-100 space-y-8">
+              <div className="flex items-center gap-3 ml-2">
+                <Shield className="w-6 h-6 text-primary" />
+                <h2 className="text-xl font-black text-[#0f172a] uppercase tracking-tight">Exam Instructions</h2>
+              </div>
+
+              <div className="space-y-6">
+                {instructions.map((item, idx) => (
+                  <div key={idx} className="flex gap-5 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm transition-all hover:shadow-md hover:border-primary/10 group">
+                    <div className="w-12 h-12 rounded-2xl bg-primary/5 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors shrink-0">
+                      {item.icon}
+                    </div>
+                    <div>
+                      <h3 className="font-black text-[#0f172a] text-sm mb-1">{item.title}</h3>
+                      <p className="text-xs text-slate-500 font-medium leading-relaxed">{item.text}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="p-6 bg-red-50 rounded-2xl border border-red-100">
+                <p className="text-[0.65rem] font-black text-red-600 uppercase tracking-widest mb-2 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4" /> Final Warning
+                </p>
+                <p className="text-xs text-red-700/80 font-medium leading-relaxed font-bold">
+                  The system will automatically terminate your exam after {maxViolations} violations. All suspicious activities are logged for review by the administrators.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (isViolationTerminated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6 bg-slate-50">
+        <div className="max-w-2xl w-full bg-white p-12 md:p-16 rounded-[3.5rem] border border-red-100 shadow-2xl text-center space-y-8 animate-in zoom-in-95 duration-500">
+          <div className="w-24 h-24 bg-red-50 text-red-600 rounded-[2rem] flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-12 h-12" />
+          </div>
+          <div className="space-y-4">
+            <h1 className="text-4xl font-black text-[#0f172a] tracking-tight uppercase">EXAM TERMINATED</h1>
+            <p className="text-slate-500 font-medium text-lg leading-relaxed">
+              Your examination has been automatically terminated due to multiple security violations.
+            </p>
+          </div>
+          
+          <div className="bg-red-50 p-6 rounded-3xl border border-red-100 text-left">
+            <h3 className="text-red-600 font-black text-xs uppercase tracking-widest mb-2 flex items-center gap-2">
+              <Shield className="w-4 h-4" /> Security Violation Record
+            </h3>
+            <p className="text-xs text-red-700/80 font-bold leading-relaxed">
+              A 1-hour penalty has been applied. You will not be able to attempt this test again until the lockout period expires. All security events have been logged for administrative review.
+            </p>
           </div>
 
-          <div className="max-w-xl space-y-8 relative z-10">
-            <div className="space-y-4">
-              <label className="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest">
-                Type <span className="text-primary tracking-normal font-black">START</span> to confirm
-              </label>
-              <input
-                type="text"
-                value={startConfirmText}
-                onChange={(e) => setStartConfirmText(e.target.value)}
-                placeholder="ENTER START"
-                className="w-full px-8 py-5 bg-slate-50 border border-slate-100 rounded-3xl font-black text-sm tracking-widest focus:outline-none focus:border-primary transition-all uppercase"
-              />
-            </div>
-            <button
-              onClick={handleStartExam}
-              disabled={startConfirmText.toUpperCase() !== 'START'}
-              className="w-full bg-primary text-white py-6 rounded-3xl font-black text-xs uppercase tracking-[0.3em] hover:bg-primary/90 transition-all disabled:opacity-20 flex items-center justify-center gap-4"
-            >
-              Start Exam <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+          <button
+            onClick={async () => {
+              await exitFullscreen()
+              router.push('/dashboard/my-tests')
+            }}
+            className="w-full bg-[#0f172a] text-white py-6 rounded-3xl font-black text-xs uppercase tracking-[0.2em] hover:bg-red-600 transition-all shadow-xl shadow-red-900/10 flex items-center justify-center gap-3 group"
+          >
+            Return to Dashboard <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          </button>
         </div>
       </div>
     )
@@ -420,10 +566,10 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
               </div>
 
               <div className="grid grid-cols-1 gap-4">
-                {(shuffledOptions[currentQuestion.id] || []).map((option, idx) => {
-                  const isSelected = Array.isArray(answers[currentQuestion.id])
-                    ? (answers[currentQuestion.id] as number[]).includes(option.originalIndex)
-                    : answers[currentQuestion.id] === option.originalIndex
+                {(shuffledOptions[currentQuestion?.id] || []).map((option, idx) => {
+                  const isSelected = Array.isArray(answers[currentQuestion?.id])
+                    ? (answers[currentQuestion?.id] as number[]).includes(option.originalIndex)
+                    : answers[currentQuestion?.id] === option.originalIndex
 
                   return (
                     <button
@@ -513,17 +659,41 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
             </div>
 
             <div className="space-y-4 pt-8 border-t border-slate-50">
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                <span className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest">Answered</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                  <span className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest">Answered</span>
+                </div>
+                <span className="text-xs font-black text-slate-600">{Object.keys(answers).length}</span>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-                <span className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest">For Review</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                  <span className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest">For Review</span>
+                </div>
+                <span className="text-xs font-black text-slate-600">{flaggedQuestions.size}</span>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                <span className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest">Visited</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                  <span className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-widest">Visited</span>
+                </div>
+                <span className="text-xs font-black text-slate-600">{visitedQuestions.size}</span>
+              </div>
+            </div>
+
+            <div className="mt-8 pt-8 border-t border-slate-50 space-y-4">
+              <div className="flex items-center justify-between px-2">
+                <span className="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest">Violations</span>
+                <span className={`text-sm font-black ${violationCount > 0 ? 'text-red-500' : 'text-green-500'}`}>
+                  {violationCount} / {maxViolations}
+                </span>
+              </div>
+              <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full transition-all duration-500 ${violationCount >= maxViolations - 1 ? 'bg-red-500' : violationCount >= maxViolations / 2 ? 'bg-amber-500' : 'bg-green-500'}`}
+                  style={{ width: `${(violationCount / maxViolations) * 100}%` }}
+                ></div>
               </div>
             </div>
           </div>
@@ -531,6 +701,30 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
       </div>
 
       {/* Overlays */}
+      {showWarning && (
+        <div className="fixed top-8 right-8 z-[200] animate-in slide-in-from-right-10 duration-500">
+          <div className="bg-white rounded-[1.5rem] p-6 shadow-2xl border-l-4 border-red-500 max-w-sm flex gap-4 items-start">
+            <div className="p-2 bg-red-50 text-red-500 rounded-xl">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="font-black text-[#0f172a] text-sm">Security Alert</p>
+              <p className="text-xs text-slate-500 font-medium leading-relaxed mt-1">{warningMessage}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!isFullscreen && isExamStarted && (
+        <div className="fixed top-8 left-8 z-[200] animate-in slide-in-from-top-10 duration-500">
+          <button 
+            onClick={requestFullscreen}
+            className="bg-amber-500 text-white px-6 py-3 rounded-2xl font-black text-[0.65rem] uppercase tracking-widest flex items-center gap-2 shadow-xl shadow-amber-500/20"
+          >
+            <Maximize className="w-4 h-4" /> Go Fullscreen
+          </button>
+        </div>
+      )}
       {isAutoSubmitting && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[120] flex items-center justify-center p-6">
           <div className="bg-white rounded-[3rem] p-10 max-w-md w-full text-center">

@@ -7,7 +7,7 @@ import { createClient } from '@supabase/supabase-js'
 export interface ViolationLog {
   user_id: string
   exam_id: string
-  violation_type: 'printscreen' | 'tab_switch' | 'window_minimize' | 'fullscreen_exit' | 'right_click' | 'devtools' | 'multi_monitor'
+  violation_type: 'printscreen' | 'tab_switch' | 'window_minimize' | 'fullscreen_exit' | 'right_click' | 'devtools' | 'copy_paste' | 'keyboard_shortcut'
   timestamp: string
   details?: Record<string, any>
   test_set_id?: string // Added for consistency with DB schema
@@ -20,6 +20,7 @@ export interface AntiCheatConfig {
   enableFullscreenMode: boolean
   enableRightClickBlock: boolean
   enableTextSelectionBlock: boolean
+  enableCopyPasteDetection: boolean
   enableWatermark: boolean
   maxViolations: number
   violationTimeout: number // in minutes
@@ -40,6 +41,7 @@ const DEFAULT_CONFIG: AntiCheatConfig = {
   enableFullscreenMode: true,
   enableRightClickBlock: true,
   enableTextSelectionBlock: true,
+  enableCopyPasteDetection: true,
   enableWatermark: true,
   maxViolations: 5,
   violationTimeout: 30
@@ -82,27 +84,34 @@ export function useAntiCheat({
     try {
       // Log to Supabase
       const { error } = await supabase
-        .from('test_violations')
+        .from('exam_violations')
         .insert({
-          ...violation,
-          test_set_id: examId,
-          attempt_id: details?.sessionId || null // Pass sessionId in details if available
+          user_id: userId,
+          exam_id: examId,
+          violation_type: violationType,
+          details: {
+            ...details,
+            sessionId: details?.sessionId || null
+          }
         })
 
       if (error) {
-        console.error('Failed to log violation:', error)
+        console.error('Failed to log violation:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+          violation: {
+            user_id: userId,
+            exam_id: examId,
+            violation_type: violationType
+          }
+        })
       }
 
       // Update local state
       setViolations(prev => {
         const newViolations = [...prev, violation]
-        
-        // Check if max violations reached
-        if (newViolations.length >= finalConfig.maxViolations) {
-          setIsTerminated(true)
-          onMaxViolationsReached?.()
-        }
-        
         return newViolations
       })
 
@@ -120,7 +129,14 @@ export function useAntiCheat({
     } catch (error) {
       console.error('Error logging violation:', error)
     }
-  }, [userId, examId, finalConfig, isTerminated, onViolation, onMaxViolationsReached])
+  }, [userId, examId, finalConfig.violationTimeout, isTerminated, onViolation])
+
+  useEffect(() => {
+    if (!isTerminated && violations.length >= finalConfig.maxViolations) {
+      setIsTerminated(true)
+      onMaxViolationsReached?.()
+    }
+  }, [violations.length, isTerminated, finalConfig.maxViolations, onMaxViolationsReached])
 
   // Show warning message
   const showWarningMessage = useCallback((message: string) => {
@@ -250,7 +266,30 @@ export function useAntiCheat({
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange)
       document.removeEventListener('msfullscreenchange', handleFullscreenChange)
     }
-  }, [finalConfig.enableFullscreenMode, isFullscreen, logViolation, showWarningMessage, requestFullscreen])
+  }, [finalConfig.enableFullscreenMode, isFullscreen, logViolation, showWarningMessage])
+
+  const exitFullscreen = useCallback(async () => {
+    if (typeof document === 'undefined') return
+
+    try {
+      if (document.fullscreenElement || 
+          (document as any).webkitFullscreenElement || 
+          (document as any).msFullscreenElement) {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen()
+        } else if ((document as any).webkitExitFullscreen) {
+          await (document as any).webkitExitFullscreen()
+        } else if ((document as any).msExitFullscreen) {
+          await (document as any).msExitFullscreen()
+        }
+      }
+      setIsFullscreen(false)
+    } catch (error) {
+      // Catch "Permissions check failed" or other browser-specific errors
+      console.warn('Fullscreen exit handled but with error:', error)
+      setIsFullscreen(false) // Assume we are out or failed gracefully
+    }
+  }, [])
 
   // Right click and text selection blocking
   const blockInteractions = useCallback(() => {
@@ -308,6 +347,28 @@ export function useAntiCheat({
 
     return () => cleanup.forEach(fn => fn())
   }, [finalConfig.enableRightClickBlock, finalConfig.enableTextSelectionBlock, logViolation, showWarningMessage])
+
+  // Copy paste detection
+  const detectCopyPaste = useCallback(() => {
+    if (!finalConfig.enableCopyPasteDetection) return
+
+    const handleCopyPaste = (e: ClipboardEvent) => {
+      e.preventDefault()
+      logViolation('copy_paste', { type: e.type })
+      showWarningMessage(`⚠️ ${e.type.charAt(0).toUpperCase() + e.type.slice(1)} is disabled! This violation has been logged.`)
+      return false
+    }
+
+    document.addEventListener('copy', handleCopyPaste)
+    document.addEventListener('cut', handleCopyPaste)
+    document.addEventListener('paste', handleCopyPaste)
+
+    return () => {
+      document.removeEventListener('copy', handleCopyPaste)
+      document.removeEventListener('cut', handleCopyPaste)
+      document.removeEventListener('paste', handleCopyPaste)
+    }
+  }, [finalConfig.enableCopyPasteDetection, logViolation, showWarningMessage])
 
   // Watermark creation
   const createWatermark = useCallback(() => {
@@ -377,6 +438,7 @@ export function useAntiCheat({
     const tabSwitchCleanup = detectTabSwitch()
     const fullscreenCleanup = detectFullscreenExit()
     const interactionsCleanup = blockInteractions()
+    const copyPasteCleanup = detectCopyPaste()
     const watermarkCleanup = createWatermark()
 
     // Add only defined cleanup functions
@@ -384,6 +446,7 @@ export function useAntiCheat({
     if (tabSwitchCleanup) cleanupFunctions.push(tabSwitchCleanup)
     if (fullscreenCleanup) cleanupFunctions.push(fullscreenCleanup)
     if (interactionsCleanup) cleanupFunctions.push(interactionsCleanup)
+    if (copyPasteCleanup) cleanupFunctions.push(copyPasteCleanup)
     if (watermarkCleanup) cleanupFunctions.push(watermarkCleanup)
 
     // Multi-monitor detection
@@ -399,16 +462,17 @@ export function useAntiCheat({
           const isOffscreen = screenLeft < -10 || screenLeft > (screenWidth - 100)
           
           // Method 3: Dimensions heuristic
-          const isExtended = (window.screen as any).isExtended || false
+          let isExtended = false
+          try {
+            isExtended = (window.screen as any).isExtended || false
+          } catch (e) {
+            // Some browsers throw permission errors on screen property access
+            console.debug('isExtended check bypassed:', e)
+          }
           
           if (isOffscreen || isExtended) {
-            logViolation('multi_monitor', { 
-              screenLeft, 
-              screenWidth, 
-              isExtended,
-              availWidth: window.screen.availWidth,
-              outerWidth: window.outerWidth
-            })
+            // Only log if it's one of the allowed types in the DB
+            // Removing multi_monitor for now as it's not in the DB check constraint
             showWarningMessage('⚠️ Multiple monitors or extended display detected! Please use only one screen.')
           }
         }
@@ -424,10 +488,7 @@ export function useAntiCheat({
     const multiMonitorCleanup = detectMultiMonitor()
     cleanupFunctions.push(multiMonitorCleanup)
 
-    // Request fullscreen on mount
-    if (finalConfig.enableFullscreenMode) {
-      requestFullscreen()
-    }
+    // requestFullscreen is now called on user gesture from TestInterface.tsx
 
     // Cleanup on unmount
     return () => {
@@ -448,6 +509,7 @@ export function useAntiCheat({
     violationCount: violations.length,
     maxViolations: finalConfig.maxViolations,
     requestFullscreen,
+    exitFullscreen,
     logViolation
   }
 }

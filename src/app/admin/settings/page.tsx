@@ -49,7 +49,12 @@ export default function SettingsPage() {
     support_phone: '',
     office_address: '',
     maintenance_mode: false,
-    default_test_price: 199
+    default_test_price: 199,
+    facebook_url: '',
+    twitter_url: '',
+    linkedin_url: '',
+    instagram_url: '',
+    youtube_url: ''
   })
 
   const tabs = [
@@ -74,7 +79,12 @@ export default function SettingsPage() {
           support_phone: data.support_phone || '',
           office_address: data.office_address || '',
           maintenance_mode: data.maintenance_mode || false,
-          default_test_price: data.default_test_price || 199
+          default_test_price: data.default_test_price || 199,
+          facebook_url: data.facebook_url || '',
+          twitter_url: data.twitter_url || '',
+          linkedin_url: data.linkedin_url || '',
+          instagram_url: data.instagram_url || '',
+          youtube_url: data.youtube_url || ''
         })
       }
       const email = await getAdminEmail()
@@ -282,6 +292,59 @@ export default function SettingsPage() {
                         onChange={(e) => setSettings({ ...settings, office_address: e.target.value })}
                         rows={2}
                         className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 transition-all font-bold resize-none" 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Facebook URL</label>
+                      <input 
+                        type="url" 
+                        value={settings.facebook_url}
+                        onChange={(e) => setSettings({ ...settings, facebook_url: e.target.value })}
+                        placeholder="https://facebook.com/yourpage"
+                        className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 transition-all font-bold" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Twitter URL</label>
+                      <input 
+                        type="url" 
+                        value={settings.twitter_url}
+                        onChange={(e) => setSettings({ ...settings, twitter_url: e.target.value })}
+                        placeholder="https://twitter.com/yourhandle"
+                        className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 transition-all font-bold" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">LinkedIn URL</label>
+                      <input 
+                        type="url" 
+                        value={settings.linkedin_url}
+                        onChange={(e) => setSettings({ ...settings, linkedin_url: e.target.value })}
+                        placeholder="https://linkedin.com/company/yourlink"
+                        className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 transition-all font-bold" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Instagram URL</label>
+                      <input 
+                        type="url" 
+                        value={settings.instagram_url}
+                        onChange={(e) => setSettings({ ...settings, instagram_url: e.target.value })}
+                        placeholder="https://instagram.com/yourhandle"
+                        className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 transition-all font-bold" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">YouTube URL</label>
+                      <input 
+                        type="url" 
+                        value={settings.youtube_url}
+                        onChange={(e) => setSettings({ ...settings, youtube_url: e.target.value })}
+                        placeholder="https://youtube.com/c/yourchannel"
+                        className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 transition-all font-bold" 
                       />
                     </div>
                   </div>

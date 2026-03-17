@@ -60,7 +60,7 @@ export default function DashboardSidebar({
         </button>
       </div>
 
-      <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
+      <nav className="flex-1 px-4 space-y-2 overflow-y-auto no-scrollbar">
         {navItems.map((item) => {
           const isActive = item.href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(item.href)
           return (

@@ -347,7 +347,7 @@ export default function AddTestModal({
                 className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-bold text-[#0f172a] cursor-pointer"
             >
                 <option value="full">Full Length</option>
-                <option value="short">Short Mock</option>
+                <option value="short">Free Test</option>
             </select>
         </div>
 

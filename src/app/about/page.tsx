@@ -1,4 +1,10 @@
 import React from 'react'
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: "About Us",
+  description: "Learn about Wings Academy, the premier platform for Aircraft Maintenance Engineers. Our mission is to provide accurate and effective exam preparation tools.",
+};
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { Target, Shield, Users, Award } from 'lucide-react'

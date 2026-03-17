@@ -20,6 +20,10 @@ export default async function TestPage({ params }: PageProps) {
     redirect('/dashboard/modules')
   }
 
+  if ('locked' in test && test.locked) {
+    redirect('/dashboard/my-tests')
+  }
+
   return (
     <div className="min-h-screen">
       {user ? <TestInterface test={test} user={user} /> : <div>Loading user data...</div>}

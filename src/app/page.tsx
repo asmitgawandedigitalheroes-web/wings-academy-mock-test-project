@@ -1,3 +1,4 @@
+import { Metadata } from 'next'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import Hero from '@/components/home/Hero'
@@ -10,6 +11,11 @@ import ExcellenceSection from '@/components/home/ExcellenceSection'
 import DashboardPreview from '@/components/home/DashboardPreview'
 import FinalCTA from '@/components/home/FinalCTA'
 import { createClient } from '@/utils/supabase/server'
+
+export const metadata: Metadata = {
+  title: "Home",
+  description: "Wings Academy is the world's most accurate and up-to-date mock test platform for Aircraft Maintenance Engineers. Master your EASA, DGCA, and GCAA exams.",
+};
 
 export default async function Home() {
   const supabase = await createClient()

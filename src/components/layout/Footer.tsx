@@ -1,11 +1,14 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { Plane, Twitter, Linkedin, Facebook, Mail, MapPin, Phone, Clock } from 'lucide-react'
+import { Plane, Twitter, Linkedin, Facebook, Instagram, Youtube, Mail, MapPin, Phone, Clock } from 'lucide-react'
+import { getPlatformSettings } from '@/app/actions/admin'
 import { createClient } from '@/utils/supabase/server'
 
 const Footer = async () => {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  const settings = await getPlatformSettings()
+
   return (
     <footer className="bg-primary text-white pt-24 pb-12 relative overflow-hidden">
       {/* Subtle top highlight */}
@@ -27,15 +30,31 @@ const Footer = async () => {
               Empowering Aircraft Maintenance Engineers with precision-engineered mock tests for global certification excellence.
             </p>
             <div className="flex space-x-5">
-              <Link href="#" className="bg-white/5 p-3 rounded-2xl hover:bg-accent hover:text-primary transition-all shadow-lg hover:shadow-accent/20">
-                <Twitter className="w-5 h-5" />
-              </Link>
-              <Link href="#" className="bg-white/5 p-3 rounded-2xl hover:bg-accent hover:text-primary transition-all shadow-lg hover:shadow-accent/20">
-                <Linkedin className="w-5 h-5" />
-              </Link>
-              <Link href="#" className="bg-white/5 p-3 rounded-2xl hover:bg-accent hover:text-primary transition-all shadow-lg hover:shadow-accent/20">
-                <Facebook className="w-5 h-5" />
-              </Link>
+              {settings?.twitter_url && (
+                <Link href={settings.twitter_url} target="_blank" className="bg-white/5 p-3 rounded-2xl hover:bg-accent hover:text-primary transition-all shadow-lg hover:shadow-accent/20">
+                  <Twitter className="w-5 h-5" />
+                </Link>
+              )}
+              {settings?.linkedin_url && (
+                <Link href={settings.linkedin_url} target="_blank" className="bg-white/5 p-3 rounded-2xl hover:bg-accent hover:text-primary transition-all shadow-lg hover:shadow-accent/20">
+                  <Linkedin className="w-5 h-5" />
+                </Link>
+              )}
+              {settings?.facebook_url && (
+                <Link href={settings.facebook_url} target="_blank" className="bg-white/5 p-3 rounded-2xl hover:bg-accent hover:text-primary transition-all shadow-lg hover:shadow-accent/20">
+                  <Facebook className="w-5 h-5" />
+                </Link>
+              )}
+              {settings?.instagram_url && (
+                <Link href={settings.instagram_url} target="_blank" className="bg-white/5 p-3 rounded-2xl hover:bg-accent hover:text-primary transition-all shadow-lg hover:shadow-accent/20">
+                  <Instagram className="w-5 h-5" />
+                </Link>
+              )}
+              {settings?.youtube_url && (
+                <Link href={settings.youtube_url} target="_blank" className="bg-white/5 p-3 rounded-2xl hover:bg-accent hover:text-primary transition-all shadow-lg hover:shadow-accent/20">
+                  <Youtube className="w-5 h-5" />
+                </Link>
+              )}
             </div>
           </div>
 

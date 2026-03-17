@@ -1,4 +1,10 @@
 import React from 'react'
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: "Contact Us",
+  description: "Get in touch with Wings Academy. We're here to help you with any questions about our AME mock test platform or your certification journey.",
+};
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { Mail, Phone, MapPin } from 'lucide-react'

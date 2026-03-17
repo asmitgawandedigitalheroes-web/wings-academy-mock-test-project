@@ -91,7 +91,7 @@ export default function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
         </div>
 
         {/* Navigation Links */}
-        <nav className="flex-1 mt-6 px-4 space-y-2 overflow-y-auto">
+        <nav className="flex-1 mt-6 px-4 space-y-2 overflow-y-auto no-scrollbar">
           {menuItems.map((item) => {
             const isActive = item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href)
             return (

@@ -183,6 +183,7 @@ export async function getTestsByModule(moduleId: string) {
 
         return {
             ...test,
+            title: test.title?.replace(/Short/g, 'Free'),
             question_count: test.question_count && test.question_count[0] ? (test.question_count[0] as any).count : 0,
             taken,
             passed
@@ -523,6 +524,7 @@ export async function getTestDetails(testId: string) {
         .single()
     
     if (data) {
+        data.title = data.title?.replace(/Short/g, 'Free');
         const results = data.test_results || [];
         const passMark = data.pass_percentage || 75;
         data.taken = results.length;
@@ -1119,7 +1121,12 @@ export async function updatePlatformSettings(formData: {
   support_phone?: string,
   office_address?: string,
   maintenance_mode: boolean,
-  default_test_price: number
+  default_test_price: number,
+  facebook_url?: string,
+  twitter_url?: string,
+  linkedin_url?: string,
+  instagram_url?: string,
+  youtube_url?: string
 }) {
   const supabase = await createClient()
   const SETTINGS_ID = '00000000-0000-0000-0000-000000000000'
@@ -1133,6 +1140,11 @@ export async function updatePlatformSettings(formData: {
       office_address: formData.office_address,
       maintenance_mode: formData.maintenance_mode,
       default_test_price: formData.default_test_price,
+      facebook_url: formData.facebook_url,
+      twitter_url: formData.twitter_url,
+      linkedin_url: formData.linkedin_url,
+      instagram_url: formData.instagram_url,
+      youtube_url: formData.youtube_url,
       updated_at: new Date().toISOString()
     })
     .eq('id', SETTINGS_ID)

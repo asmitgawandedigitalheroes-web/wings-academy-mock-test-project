@@ -140,17 +140,20 @@ export async function getModuleTests(moduleId: string) {
 
   if (!user) return { module: null, tests: [] }
 
-  // Fetch all data in parallel
   const [
     { data: module },
     { data: tests, error },
     { data: purchases },
-    { data: allAttempts }
+    { data: allAttempts },
+    { data: results },
+    { data: violations }
   ] = await Promise.all([
     supabase.from('modules').select('id, name, description, price, enable_purchase').eq('id', moduleId).single(),
     supabase.from('test_sets').select('id, title, description, time_limit_minutes, is_paid, price, attempts_allowed, cooldown_hours, test_questions(count)').eq('module_id', moduleId).eq('is_hidden', false).order('created_at', { ascending: true }),
     supabase.from('payments').select('test_set_id, module_id').eq('user_id', user.id).eq('status', 'completed'),
-    supabase.from('test_attempts').select('test_set_id, status, updated_at, attempt_number').eq('user_id', user.id)
+    supabase.from('test_attempts').select('test_set_id, status, updated_at, attempt_number').eq('user_id', user.id),
+    supabase.from('test_results').select('test_set_id, completed_at, is_violation').eq('user_id', user.id).order('completed_at', { ascending: false }),
+    supabase.from('exam_violations').select('exam_id, created_at').eq('user_id', user.id).order('created_at', { ascending: false })
   ])
 
   if (error || !tests) return { module: module || null, tests: [] }
@@ -162,12 +165,30 @@ export async function getModuleTests(moduleId: string) {
     attemptsByTest.get(a.test_set_id)?.push(a)
   })
 
-  const mappedTests = tests.map(test => {
-    const testAttempts = attemptsByTest.get(test.id) || []
-    
-    const completedAttempts = testAttempts.filter(a => a.status === 'completed').length
+    const mappedTests = tests.map(test => {
+      const testAttempts = attemptsByTest.get(test.id) || []
+      const completedAttempts = testAttempts.filter(a => a.status === 'completed').length
+      
+      // Calculate 1-hour lockout
+      let lockoutMinutes = 0
+      const lastResult = results?.find(r => r.test_set_id === test.id)
+      
+      // Check violation from result OR separate violations table
+      const isViolationResult = lastResult ? !!(lastResult as any).is_violation : false
+      const hasViolationRecord = violations?.some(v => v.exam_id === test.id)
+      
+      if (isViolationResult || hasViolationRecord) {
+        const lastTime = lastResult?.completed_at || violations?.find(v => v.exam_id === test.id)?.created_at
+        if (lastTime) {
+          const diffMs = new Date().getTime() - new Date(lastTime).getTime()
+          const diffMins = Math.floor(diffMs / 60000)
+          if (diffMins < 60) {
+            lockoutMinutes = 60 - diffMins
+          }
+        }
+      }
+
     const isLimitReached = test.attempts_allowed > 0 && completedAttempts >= test.attempts_allowed
-    const finalLockout = 0
 
     const isModulePurchased = purchases?.some(p => p.module_id === moduleId)
     const purchasedTestIds = new Set(purchases?.filter(p => p.test_set_id).map(p => p.test_set_id) || [])
@@ -181,8 +202,8 @@ export async function getModuleTests(moduleId: string) {
       isPaid: test.is_paid,
       price: test.price,
       isUnlocked: !test.is_paid || isModulePurchased || purchasedTestIds.has(test.id),
-      lockoutMinutes: finalLockout,
-      isLimitReached: isLimitReached && finalLockout <= 0, // Only show as reached if not already timed out
+      lockoutMinutes: lockoutMinutes,
+      isLimitReached: isLimitReached && lockoutMinutes <= 0, // Only show as reached if not already timed out
       completedAttempts,
       attemptsAllowed: test.attempts_allowed
     }
@@ -211,6 +232,46 @@ export async function getTestData(testId: string) {
     .single()
 
   if (!test) return null
+
+  // Check for 1-hour lockout due to violations
+  const { data: lastResult } = await supabase
+    .from('test_results')
+    .select('completed_at, is_violation')
+    .eq('user_id', user.id)
+    .eq('test_set_id', testId)
+    .order('completed_at', { ascending: false })
+    .limit(1)
+    .single()
+
+  if (lastResult) {
+    let isViolation = !!(lastResult as any).is_violation
+    
+    // Fallback: check violation count if flag isn't set
+    if (!isViolation) {
+      const { count } = await supabase
+        .from('exam_violations')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('exam_id', testId)
+      
+      if (count !== null && count >= 5) {
+        isViolation = true
+      }
+    }
+
+    if (isViolation) {
+      const completionTime = new Date(lastResult.completed_at).getTime()
+      const currentTime = new Date().getTime()
+      const diffMins = Math.floor((currentTime - completionTime) / (1000 * 60))
+      
+      if (diffMins < 60) {
+        return {
+          locked: true,
+          lockoutMinutes: 60 - diffMins
+        }
+      }
+    }
+  }
 
   // Get questions for this test
   const { data: questionLinks } = await supabase
@@ -368,57 +429,29 @@ export async function getResultDetails(resultId: string) {
   const passPercentage = test?.pass_percentage || 75
   const status = Number(data.score) >= passPercentage ? 'Passed' : 'Failed'
 
-  // 2. Fetch Review Data if allowed (or partially allowed)
-  let reviewItems = null
-  
-  // Find the attempt that generated this result (latest completed before result was created)
-  const { data: attempt } = await supabase
-    .from('test_attempts')
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('test_set_id', test.id)
-    .eq('status', 'completed')
-    .lte('updated_at', data.completed_at)
-    .order('updated_at', { ascending: false })
-    .limit(1)
-    .single()
-
-  if (attempt) {
-    const [
-        { data: questionLinks },
-        { data: savedAnswers }
-    ] = await Promise.all([
-        supabase.from('test_questions').select('questions(*)').eq('test_set_id', test.id).order('sort_order', { ascending: true }),
-        supabase.from('student_answers').select('*').eq('attempt_id', attempt.id)
-    ])
-
-    const answersMap = new Map(savedAnswers?.map(a => [a.question_id, a]))
-
-    reviewItems = questionLinks?.map(link => {
-        const q = (link.questions as any)
-        const ans = answersMap.get(q.id)
-        
-        return {
-            id: q.id,
-            questionText: q.question_text,
-            options: q.options,
-            selectedOption: ans?.selected_option_index,
-            // Respect visibility settings
-            correctOption: test.show_answers ? q.correct_option_index : null,
-            explanation: test.show_explanation ? q.explanation : null,
-            isCorrect: test.show_answers ? (ans?.selected_option_index === q.correct_option_index) : null
-        }
-    }) || []
+  // 2. Check for violations as a fallback for termination status
+  let isViolation = !!data.is_violation
+  if (!isViolation) {
+    const { count } = await supabase
+      .from('exam_violations')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('exam_id', test.id)
+    
+    // If there are 5 or more violations, we treat it as a violation fail
+    if (count !== null && count >= 5) {
+      isViolation = true
+    }
   }
 
   return {
     ...data,
     accuracy,
     status,
+    isViolation,
     showScore: test.show_score,
     showAnswers: test.show_answers,
     showExplanation: test.show_explanation,
-    reviewItems,
     moduleName: test?.modules?.name || 'General'
   }
 }
@@ -451,7 +484,7 @@ export async function getResultsHistory() {
     const passPercentage = (r.test_sets as any)?.pass_percentage || 75
     return {
       id: r.id,
-      title: (r.test_sets as any)?.title,
+      title: (r.test_sets as any)?.title?.replace(/Short/g, 'Free'),
       module: (r.test_sets as any)?.modules?.name || 'General',
       score: `${Math.round(r.score)}%`,
       status: Number(r.score) >= passPercentage ? 'Passed' : 'Failed',
@@ -486,30 +519,56 @@ export async function getMyTests() {
   const allTests = [...(freeTests || []), ...(purchasedTests as any[])]
   const uniqueTests = Array.from(new Map(allTests.map(t => [t.id, t])).values())
 
-  // Get results to show completion status
   const { data: results } = await supabase
     .from('test_results')
-    .select('test_set_id, score, completed_at')
+    .select('test_set_id, score, completed_at, is_violation')
     .eq('user_id', user.id)
     .order('completed_at', { ascending: false })
 
-  const lockouts: any[] = []
-
-  const lockoutMap = new Map(lockouts?.map(l => [l.test_set_id, l.updated_at]))
+  // Also get violation counts for fallback detection
+  const { data: violations } = await supabase
+    .from('exam_violations')
+    .select('exam_id, created_at')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
 
   return uniqueTests.map(test => {
     const lastResult = results?.find(r => r.test_set_id === test.id)
     
     let lockoutMinutes = 0
+    if (lastResult) {
+      // Check if it's a violation-based termination
+      let isViolation = !!(lastResult as any).is_violation
+      
+      // Fallback: check violation count if flag isn't set (DB schema drift)
+      if (!isViolation && violations) {
+        const testViolations = violations.filter(v => v.exam_id === test.id)
+        // If there are many violations logged around the time of completion, it was probably a lockout
+        if (testViolations.length >= 5) {
+          isViolation = true
+        }
+      }
+
+      if (isViolation) {
+        const completionTime = new Date(lastResult.completed_at).getTime()
+        const currentTime = new Date().getTime()
+        const diffMs = currentTime - completionTime
+        const diffMins = Math.floor(diffMs / (1000 * 60))
+        
+        if (diffMins < 60) {
+          lockoutMinutes = 60 - diffMins
+        }
+      }
+    }
 
     return {
       id: test.id,
-      title: test.title,
+      title: test.title?.replace(/Short/g, 'Free'),
       module: (test.modules as any)?.name || 'General',
       duration: `${test.time_limit_minutes} min`,
-      status: lastResult ? 'Completed' : 'Pending',
+      status: lockoutMinutes > 0 ? 'Locked' : (lastResult ? 'Completed' : 'Pending'),
       score: lastResult ? `${Math.round(lastResult.score)}%` : '-',
-      lockoutMinutes: lockoutMinutes > 0 ? lockoutMinutes : 0
+      lockoutMinutes: lockoutMinutes
     }
   })
 }
@@ -827,7 +886,7 @@ export async function updateTestProgress(
   return { success: true }
 }
 
-export async function finalizeTest(sessionId: string) {
+export async function finalizeTest(sessionId: string, isViolation: boolean = false) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -842,21 +901,50 @@ export async function finalizeTest(sessionId: string) {
 
   if (!session) return { error: 'Session not found' }
   
-  // If session is already finalized, look up the existing result and redirect gracefully
-  if (session.status !== 'in_progress') {
-    const { data: existingResult } = await supabase
+  if (isViolation) {
+    let { data: result, error: resultError } = await supabase
       .from('test_results')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('test_set_id', session.test_set_id)
-      .order('completed_at', { ascending: false })
-      .limit(1)
+      .insert({
+        user_id: user.id,
+        test_set_id: session.test_set_id,
+        score: 0,
+        total_questions: 0,
+        correct_answers: 0,
+        time_spent_seconds: Math.floor((new Date().getTime() - new Date(session.start_time).getTime()) / 1000),
+        is_violation: true
+      })
+      .select()
       .single()
-    
-    return { 
-      error: 'Session already finalized', 
-      resultId: existingResult?.id || null 
+
+    if (resultError) {
+      // Fallback if is_violation column is missing (Postgres error 42703)
+      if (resultError.code === '42703' || resultError.message.includes('is_violation')) {
+        const { data: fallbackResult, error: fallbackError } = await supabase
+          .from('test_results')
+          .insert({
+            user_id: user.id,
+            test_set_id: session.test_set_id,
+            score: 0,
+            total_questions: 0,
+            correct_answers: 0,
+            time_spent_seconds: Math.floor((new Date().getTime() - new Date(session.start_time).getTime()) / 1000)
+          })
+          .select()
+          .single()
+        
+        if (fallbackError) return { error: fallbackError.message }
+        result = fallbackResult
+      } else {
+        return { error: resultError.message }
+      }
     }
+
+    await supabase
+      .from('test_attempts')
+      .update({ status: 'completed', completed_at: new Date().toISOString() })
+      .eq('id', sessionId)
+
+    return { success: true, resultId: result?.id }
   }
 
   const testData = (session.test_sets as any)
@@ -913,7 +1001,7 @@ export async function finalizeTest(sessionId: string) {
   const percentage = maxScore > 0 ? (score / maxScore) * 100 : 0
 
   // Create final result
-  const { data: result, error: resultError } = await supabase
+  let { data: result, error: resultError } = await supabase
     .from('test_results')
     .insert({
       user_id: user.id,
@@ -921,12 +1009,34 @@ export async function finalizeTest(sessionId: string) {
       score: percentage,
       total_questions: totalQuestions,
       correct_answers: correctAnswers,
-      time_spent_seconds: Math.floor((new Date().getTime() - new Date(session.start_time).getTime()) / 1000)
+      time_spent_seconds: Math.floor((new Date().getTime() - new Date(session.start_time).getTime()) / 1000),
+      is_violation: isViolation
     })
     .select()
     .single()
 
-  if (resultError) return { error: resultError.message }
+  if (resultError) {
+    // Fallback if is_violation column doesn't exist yet
+    if (isViolation || resultError.code === '42703') { // 42703 is undefined_column in Postgres
+      const { data: fallbackResult, error: fallbackError } = await supabase
+        .from('test_results')
+        .insert({
+          user_id: user.id,
+          test_set_id: session.test_set_id,
+          score: percentage,
+          total_questions: totalQuestions,
+          correct_answers: correctAnswers,
+          time_spent_seconds: Math.floor((new Date().getTime() - new Date(session.start_time).getTime()) / 1000)
+        })
+        .select()
+        .single()
+      
+      if (fallbackError) return { error: fallbackError.message }
+      result = fallbackResult
+    } else {
+      return { error: resultError.message }
+    }
+  }
 
   // Update session status
   await supabase
