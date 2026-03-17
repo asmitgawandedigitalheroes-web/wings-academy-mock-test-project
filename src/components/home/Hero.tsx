@@ -19,7 +19,7 @@ const Hero = ({ user }: { user: any }) => {
               Trusted by Future Engineers
             </div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-black text-primary leading-[1.1] mb-6 tracking-tight">
-              Master your Aircraft Maintenance Engineering Exams <span className="text-accent">Precision</span> Mock Tests
+              Master your Aircraft Maintenance Engineering Exams With <span className="text-accent">Precision</span> Mock Tests
             </h1>
             <p className="text-lg md:text-xl text-slate-600 mb-10 max-w-2xl mx-auto lg:mx-0 font-medium leading-relaxed">
               Practice real exam-style questions for EASA, GCAA, and DGCA certifications. Simple, mobile-friendly preparation that guarantees success.

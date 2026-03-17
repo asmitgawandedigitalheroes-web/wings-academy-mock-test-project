@@ -16,18 +16,20 @@ export default async function Home() {
   const { data: { user } } = await supabase.auth.getUser()
 
   return (
-    <main className="min-h-screen">
+    <>
       <Navbar />
-      <Hero user={user} />
-      <Stats />
-      <HowItWorks />
-      <Features />
-      <PerformanceSection />
-      <ExcellenceSection />
-      <Modules user={user} />
-      <DashboardPreview />
-      <FinalCTA user={user} />
-      <Footer />
-    </main>
+      <main>
+        <Hero user={user} />
+        <Stats />
+        <HowItWorks />
+        <Features />
+        <PerformanceSection />
+        <ExcellenceSection />
+        <Modules user={user} />
+        <DashboardPreview />
+        <FinalCTA user={user} />
+        <Footer />
+      </main>
+    </>
   )
 }

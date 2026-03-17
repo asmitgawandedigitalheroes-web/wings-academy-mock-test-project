@@ -50,6 +50,10 @@ export async function signup(formData: FormData) {
   const password = formData.get('password') as string
   const name = formData.get('name') as string
 
+  if (!password || password.length < 8) {
+    return redirect(`/signup?error=${encodeURIComponent('Password must be at least 8 characters')}`)
+  }
+
   const { error } = await supabase.auth.signUp({
     email,
     password,
@@ -102,8 +106,8 @@ export async function updatePassword(formData: FormData) {
   const password = formData.get('password') as string
   const confirmPassword = formData.get('confirm-password') as string
 
-  if (!password || password.length < 6) {
-    return redirect(`/reset-password?error=${encodeURIComponent('Password must be at least 6 characters')}`)
+  if (!password || password.length < 8) {
+    return redirect(`/reset-password?error=${encodeURIComponent('Password must be at least 8 characters')}`)
   }
 
   if (password !== confirmPassword) {

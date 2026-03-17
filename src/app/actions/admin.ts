@@ -1224,6 +1224,9 @@ export async function globalSearch(query: string) {
 }
 
 export async function createUser(formData: { name: string, email: string, password: string }) {
+  if (!formData.password || formData.password.length < 8) {
+    return { error: 'Password must be at least 8 characters.' }
+  }
   const supabaseAdmin = createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!

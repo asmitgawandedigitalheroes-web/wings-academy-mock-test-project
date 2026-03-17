@@ -21,8 +21,8 @@ export default function AddUserModal({ onCancel, onSuccess }: AddUserModalProps)
     setLoading(true)
     setError(null)
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.')
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.')
       setLoading(false)
       return
     }
@@ -106,8 +106,8 @@ export default function AddUserModal({ onCancel, onSuccess }: AddUserModalProps)
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Minimum 6 characters"
-                minLength={6}
+                placeholder="Minimum 8 characters"
+                minLength={8}
                 className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all font-bold placeholder:text-slate-300"
               />
             </div>
