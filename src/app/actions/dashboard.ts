@@ -3,9 +3,9 @@
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 
-export async function getDashboardStats() {
+export async function getDashboardStats(existingUser?: any) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = existingUser || (await supabase.auth.getUser()).data.user
 
   if (!user) return { error: 'Not authenticated' }
 
@@ -15,7 +15,7 @@ export async function getDashboardStats() {
     { count: purchasedCount }
   ] = await Promise.all([
     supabase.from('test_results').select('score, completed_at, test_sets(pass_percentage)').eq('user_id', user.id),
-    supabase.from('payments').select('*', { count: 'exact', head: true }).eq('user_id', user.id).eq('status', 'completed')
+    supabase.from('payments').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('status', 'completed')
   ])
 
   if (error) return { error: error.message }
@@ -40,9 +40,9 @@ export async function getDashboardStats() {
   }
 }
 
-export async function getPerformanceData() {
+export async function getPerformanceData(existingUser?: any) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = existingUser || (await supabase.auth.getUser()).data.user
 
   if (!user) return []
 
@@ -66,9 +66,9 @@ export async function getPerformanceData() {
   }) || []
 }
 
-export async function getRecentActivity() {
+export async function getRecentActivity(existingUser?: any) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = existingUser || (await supabase.auth.getUser()).data.user
 
   if (!user) return []
 
@@ -227,7 +227,7 @@ export async function getTestData(testId: string) {
   // Get test details
   const { data: test } = await supabase
     .from('test_sets')
-    .select('*')
+    .select('id, title, description, time_limit_minutes, randomize_questions, randomize_answers, marks_per_question, negative_marks, module_id, price')
     .eq('id', testId)
     .single()
 
@@ -347,8 +347,9 @@ export async function submitTest(testId: string, answers: Record<string, number>
   if (!user) return { error: 'Not authenticated' }
 
   // Get test and questions for scoring
-  const testData = await getTestData(testId)
-  if (!testData) return { error: 'Test not found' }
+  const rawTestData = await getTestData(testId)
+  if (!rawTestData || (rawTestData as any).locked) return { error: 'Test is locked or not found' }
+  const testData = rawTestData as any
 
   let score = 0
   let correctAnswers = 0
@@ -403,7 +404,13 @@ export async function getResultDetails(resultId: string) {
   const { data, error } = await supabase
     .from('test_results')
     .select(`
-      *,
+      id,
+      score,
+      total_questions,
+      correct_answers,
+      time_spent_seconds,
+      is_violation,
+      completed_at,
       test_sets(
         id,
         title,
@@ -499,38 +506,24 @@ export async function getMyTests() {
 
   if (!user) return []
 
-  // Get all free tests
-  const { data: freeTests } = await supabase
-    .from('test_sets')
-    .select('id, title, test_type, time_limit_minutes, modules(name)')
-    .eq('is_paid', false)
-    .eq('is_hidden', false)
-
-  // Get purchased tests
-  const { data: purchases } = await supabase
-    .from('payments')
-    .select('test_set_id, test_sets(id, title, test_type, time_limit_minutes, modules(name))')
-    .eq('user_id', user.id)
-    .eq('status', 'completed')
+  // Fetch all data in parallel for faster response
+  const [
+    { data: freeTests },
+    { data: purchases },
+    { data: results },
+    { data: violations }
+  ] = await Promise.all([
+    supabase.from('test_sets').select('id, title, test_type, time_limit_minutes, modules(name)').eq('is_paid', false).eq('is_hidden', false),
+    supabase.from('payments').select('test_set_id, test_sets(id, title, test_type, time_limit_minutes, modules(name))').eq('user_id', user.id).eq('status', 'completed'),
+    supabase.from('test_results').select('test_set_id, score, completed_at, is_violation').eq('user_id', user.id).order('completed_at', { ascending: false }),
+    supabase.from('exam_violations').select('exam_id, created_at').eq('user_id', user.id).order('created_at', { ascending: false })
+  ])
 
   const purchasedTests = purchases?.map(p => p.test_sets) || []
   
   // Combine and deduplicate
   const allTests = [...(freeTests || []), ...(purchasedTests as any[])]
   const uniqueTests = Array.from(new Map(allTests.map(t => [t.id, t])).values())
-
-  const { data: results } = await supabase
-    .from('test_results')
-    .select('test_set_id, score, completed_at, is_violation')
-    .eq('user_id', user.id)
-    .order('completed_at', { ascending: false })
-
-  // Also get violation counts for fallback detection
-  const { data: violations } = await supabase
-    .from('exam_violations')
-    .select('exam_id, created_at')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
 
   return uniqueTests.map(test => {
     const lastResult = results?.find(r => r.test_set_id === test.id)
@@ -611,16 +604,11 @@ export async function getProfileData() {
 
   if (!user) return null
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-
-  const { data: results } = await supabase
-    .from('test_results')
-    .select('score')
-    .eq('user_id', user.id)
+  // Fetch profile and results in parallel for faster response
+  const [{ data: profile }, { data: results }] = await Promise.all([
+    supabase.from('profiles').select('id, full_name, phone, country, avatar_url').eq('id', user.id).single(),
+    supabase.from('test_results').select('score').eq('user_id', user.id)
+  ])
 
   const totalTests = results?.length || 0
   const avgScore = (results && results.length > 0)
@@ -1055,9 +1043,9 @@ export async function finalizeTest(sessionId: string, isViolation: boolean = fal
   return { success: true, resultId: result.id }
 }
 
-export async function getModuleProgress() {
+export async function getModuleProgress(existingUser?: any) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = existingUser || (await supabase.auth.getUser()).data.user
 
   if (!user) return []
 

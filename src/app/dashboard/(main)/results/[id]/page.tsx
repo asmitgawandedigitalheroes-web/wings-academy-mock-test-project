@@ -11,11 +11,12 @@ interface PageProps {
 
 export default async function ResultSummaryPage({ params }: PageProps) {
   const { id } = await params
-  const result = await getResultDetails(id)
-
-  if (!result) {
+  const resultData = await getResultDetails(id)
+  
+  if (!resultData) {
     redirect('/dashboard/results')
   }
+  const result = resultData as any
 
   const isPassed = result.status === 'Passed'
 

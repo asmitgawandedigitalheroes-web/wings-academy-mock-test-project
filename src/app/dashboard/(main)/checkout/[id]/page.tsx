@@ -10,11 +10,12 @@ interface PageProps {
 
 export default async function CheckoutPage({ params }: PageProps) {
   const { id } = await params
-  const test = await getTestData(id)
-
-  if (!test) {
+  const rawTest = await getTestData(id)
+  
+  if (!rawTest || (rawTest as any).locked) {
     redirect('/dashboard/modules')
   }
+  const test = rawTest as any
 
   const handleUnlock = async () => {
     'use server'

@@ -24,9 +24,11 @@ export default async function TestPage({ params }: PageProps) {
     redirect('/dashboard/my-tests')
   }
 
+  const testData = test as any
+
   return (
     <div className="min-h-screen">
-      {user ? <TestInterface test={test} user={user} /> : <div>Loading user data...</div>}
+      {user ? <TestInterface test={testData} user={user} /> : <div>Loading user data...</div>}
     </div>
   )
 }

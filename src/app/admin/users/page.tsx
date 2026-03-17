@@ -50,7 +50,7 @@ export default function UserManagement() {
     setLoading(true)
     const { data } = await supabase
       .from('profiles')
-      .select('*')
+      .select('id, full_name, email, status, created_at')
       .eq('role', 'student')
       .order('created_at', { ascending: false })
 

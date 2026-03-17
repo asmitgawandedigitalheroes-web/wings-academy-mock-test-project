@@ -32,7 +32,11 @@ export default function PaymentsPage() {
     const { data, error } = await supabase
       .from('payments')
       .select(`
-        *,
+        id,
+        amount,
+        status,
+        transaction_id,
+        created_at,
         profiles (full_name, email),
         test_sets (title)
       `)

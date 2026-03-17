@@ -367,8 +367,8 @@ export async function getReportData() {
   const supabase = await createClient()
 
   const [ { data: students }, { data: results } ] = await Promise.all([
-    supabase.from('profiles').select('*').order('created_at', { ascending: false }),
-    supabase.from('test_results').select('*, profiles(full_name, email), test_sets(title)').order('completed_at', { ascending: false })
+    supabase.from('profiles').select('id, full_name, email, created_at, role, status').order('created_at', { ascending: false }),
+    supabase.from('test_results').select('id, user_id, test_set_id, score, completed_at, time_spent_seconds, total_questions, correct_answers, profiles(full_name, email), test_sets(title)').order('completed_at', { ascending: false })
   ])
 
   return { students, results }

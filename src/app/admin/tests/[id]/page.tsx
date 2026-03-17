@@ -78,9 +78,11 @@ export default function TestQuestionsPage() {
   async function fetchData() {
     try {
       setLoading(true)
-      const testData = await getTestDetails(id)
+      const [testData, qData] = await Promise.all([
+        getTestDetails(id),
+        getQuestionsByTest(id)
+      ])
       setTest(testData)
-      const qData = await getQuestionsByTest(id)
       setQuestions(qData)
     } catch (err) {
       console.error(err)

@@ -15,18 +15,13 @@ export default async function StudentDashboard() {
     redirect('/login')
   }
 
-  // Fetch profile to get real name
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name')
-    .eq('id', user.id)
-    .single()
-
-  const [stats, progress, chartData, activities] = await Promise.all([
-    getDashboardStats(),
-    getModuleProgress(),
-    getPerformanceData(),
-    getRecentActivity()
+  // Fetch profile and dashboard data in parallel for faster response
+  const [stats, progress, chartData, activities, { data: profile }] = await Promise.all([
+    getDashboardStats(user),
+    getModuleProgress(user),
+    getPerformanceData(user),
+    getRecentActivity(user),
+    supabase.from('profiles').select('full_name').eq('id', user.id).single()
   ])
 
   const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0]

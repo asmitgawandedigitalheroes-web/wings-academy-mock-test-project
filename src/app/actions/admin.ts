@@ -130,12 +130,13 @@ export async function getModulesWithCategories() {
             id, 
             name, 
             status, 
-            categories(id, name),
+            categories:category_id(id, name),
             test_sets(
                 id,
-                test_results(id, score, test_sets(pass_percentage))
+                pass_percentage,
+                test_results(id, score)
             ),
-            questions(count)
+            questions:questions(count)
         `)
         .order('name')
 
@@ -167,9 +168,18 @@ export async function getTestsByModule(moduleId: string) {
     const { data } = await supabase
         .from('test_sets')
         .select(`
-            *,
+            id,
+            title,
+            module_id,
+            time_limit_minutes,
+            pass_percentage,
+            test_type,
+            is_paid,
+            price,
+            status,
+            created_at,
             question_count:test_questions(count),
-            test_results(id, score, test_sets(pass_percentage))
+            test_results(id, score)
         `)
         .eq('module_id', moduleId)
         .order('created_at', { ascending: false })
@@ -519,17 +529,43 @@ export async function getTestDetails(testId: string) {
     const supabase = await createClient()
     const { data } = await supabase
         .from('test_sets')
-        .select('*, modules(id, name, categories(name)), test_results(id, score), question_count:test_questions(count)')
+        .select(`
+            id,
+            title,
+            description,
+            module_id,
+            time_limit_minutes,
+            pass_percentage,
+            target_questions,
+            attempts_allowed,
+            cooldown_hours,
+            is_paid,
+            price,
+            status,
+            show_score,
+            show_answers,
+            show_explanation,
+            start_date,
+            end_date,
+            randomize_questions,
+            randomize_answers,
+            marks_per_question,
+            negative_marks,
+            modules(id, name, categories(name)), 
+            test_results(id, score), 
+            question_count:test_questions(count)
+        `)
         .eq('id', testId)
         .single()
     
     if (data) {
-        data.title = data.title?.replace(/Short/g, 'Free');
-        const results = data.test_results || [];
-        const passMark = data.pass_percentage || 75;
-        data.taken = results.length;
-        data.passed = results.filter((r: any) => r.score >= passMark).length;
-        data.question_count = data.question_count && data.question_count[0] ? (data.question_count[0] as any).count : 0;
+        const test = data as any;
+        test.title = test.title?.replace(/Short/g, 'Free');
+        const results = test.test_results || [];
+        const passMark = test.pass_percentage || 75;
+        test.taken = results.length;
+        test.passed = results.filter((r: any) => r.score >= passMark).length;
+        test.question_count = test.question_count && test.question_count[0] ? (test.question_count[0] as any).count : 0;
     }
 
     return data
