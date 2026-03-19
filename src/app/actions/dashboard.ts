@@ -116,6 +116,7 @@ export async function getModules() {
       description,
       price,
       image_url,
+      icon_url,
       test_sets(id, is_paid)
     `)
     .eq('status', 'enabled')
@@ -128,6 +129,7 @@ export async function getModules() {
     description: mod.description,
     price: mod.price,
     imageUrl: mod.image_url,
+    iconUrl: mod.icon_url,
     totalTests: mod.test_sets?.length || 0,
     freeTests: mod.test_sets?.filter((t: any) => !t.is_paid).length || 0,
     paidTests: mod.test_sets?.filter((t: any) => t.is_paid).length || 0
@@ -145,6 +147,7 @@ export async function getPublicModules() {
       description,
       price,
       image_url,
+      icon_url,
       test_sets(id, is_paid)
     `)
     .eq('status', 'enabled')
@@ -155,12 +158,20 @@ export async function getPublicModules() {
     return []
   }
 
+  if (!modules || modules.length === 0) {
+    console.log('No enabled modules found in database.')
+    return []
+  }
+
+  console.log(`Found ${modules.length} public modules.`)
+
   return modules.map(mod => ({
     id: mod.id,
     name: mod.name,
     description: mod.description,
     price: mod.price,
     imageUrl: mod.image_url,
+    iconUrl: mod.icon_url,
     totalTests: mod.test_sets?.length || 0,
     freeTests: mod.test_sets?.filter((t: any) => !t.is_paid).length || 0,
     paidTests: mod.test_sets?.filter((t: any) => t.is_paid).length || 0
