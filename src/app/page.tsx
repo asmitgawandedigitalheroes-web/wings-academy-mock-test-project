@@ -15,7 +15,7 @@ import { createClient } from '@/utils/supabase/server'
 import { getPublicModules } from '@/app/actions/dashboard'
 
 export const metadata: Metadata = {
-  title: "Home",
+  title: "Wings Academy | Premium AME Mock Test Platform",
   description: "Wings Academy is the world's most accurate and up-to-date mock test platform for Aircraft Maintenance Engineers. Master your EASA, DGCA, and GCAA exams.",
 };
 
