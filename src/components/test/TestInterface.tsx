@@ -86,13 +86,85 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
     }
   })
 
-  // Question randomization state
-  const [shuffledQuestions, setShuffledQuestions] = useState<any[]>([])
-  const [shuffledOptions, setShuffledOptions] = useState<Record<string, any[]>>({})
+  // Ensure originalQuestions is a clean, dense array of non-null objects
+  const originalQuestions = React.useMemo(() => {
+    return (test.questions || []).filter(q => q && typeof q === 'object' && q.id)
+  }, [test.questions])
 
-  const originalQuestions = test.questions || []
-  const currentQuestion = shuffledQuestions.length > 0 
-    ? shuffledQuestions[currentQuestionIdx] 
+  // Derived state for questions (shuffled with stable seed)
+  const { shuffledQuestions, shuffledOptions } = React.useMemo(() => {
+    if (originalQuestions.length === 0) {
+      return { shuffledQuestions: [], shuffledOptions: {} }
+    }
+
+    // Use sessionId for seed if available to keep order consistent on refresh
+    const seedString = `${sessionId || 'new'}-${user?.id || 'guest'}-${test.id}`
+    let seed = 0
+    for (let i = 0; i < seedString.length; i++) {
+      seed = (seed << 5) - seed + seedString.charCodeAt(i)
+      seed |= 0
+    }
+
+    const seededRandom = () => {
+      seed = (seed * 9301 + 49297) % 233280
+      return seed / 233280
+    }
+
+    // Shuffle Questions
+    const indices = originalQuestions.map((_, i) => i)
+    for (let i = indices.length - 1; i > 0; i--) {
+      const j = Math.floor(seededRandom() * (i + 1))
+        ;[indices[i], indices[j]] = [indices[j], indices[i]]
+    }
+    const shuffled = indices.map((i: number) => originalQuestions[i]).filter(Boolean)
+
+    // Shuffle Options
+    const shuffledOpts: Record<string, any[]> = {}
+    shuffled.forEach((q: any) => {
+      if (q && q.options && Array.isArray(q.options)) {
+        const optIndices = q.options.map((_: any, i: number) => i)
+        // Only shuffle if there are options
+        if (optIndices.length > 0) {
+          for (let i = optIndices.length - 1; i > 0; i--) {
+            const j = Math.floor(seededRandom() * (i + 1))
+              ;[optIndices[i], optIndices[j]] = [optIndices[j], optIndices[i]]
+          }
+
+          shuffledOpts[q.id] = optIndices.map((i: number) => {
+            const opt = q.options![i]
+            let text = ''
+            let originalIndex = i
+
+            if (typeof opt === 'string') {
+              text = opt
+            }
+            else if (opt && typeof opt === 'object') {
+              text = opt.text || opt.option || opt.value || String(Object.values(opt)[0] || '')
+              originalIndex = ('index' in opt || 'originalIndex' in opt) ? (opt.index ?? opt.originalIndex) : i
+            }
+
+            return {
+              text: String(text || '').trim() || `Option ${i + 1}`,
+              originalIndex: originalIndex
+            }
+          })
+        }
+      }
+
+      // Fallback if shuffledOpts[q.id] is still missing or empty
+      if (!shuffledOpts[q.id] || shuffledOpts[q.id].length === 0) {
+        shuffledOpts[q.id] = (q.options || []).map((opt: any, i: number) => ({
+          text: (typeof opt === 'string' ? opt : (opt?.text || opt?.option || `Option ${i + 1}`)),
+          originalIndex: (opt?.index ?? opt?.originalIndex ?? i)
+        }))
+      }
+    })
+
+    return { shuffledQuestions: shuffled, shuffledOptions: shuffledOpts }
+  }, [originalQuestions, test.id, user?.id, sessionId])
+
+  const currentQuestion = shuffledQuestions.length > 0
+    ? shuffledQuestions[currentQuestionIdx]
     : originalQuestions[currentQuestionIdx]
   const isTimeExpiredRef = useRef(false)
   const hasSubmittedRef = useRef(false)
@@ -124,10 +196,30 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
       const response: any = await finalizeTest(sessionId, isViolation)
       if (response.success) {
         sessionStorage.removeItem(`test_session_${test.id}`)
-        
+
         if (isViolation) return
 
         await exitFullscreen()
+
+        // Signal completion to the opening tab (if exists) and close
+        if (typeof window !== 'undefined' && window.opener) {
+          try {
+            window.opener.postMessage({
+              type: 'TEST_COMPLETED',
+              resultId: response.resultId
+            }, window.location.origin)
+
+            // Brief delay to ensure message is sent before closing
+            setTimeout(() => {
+              window.close()
+            }, 500)
+            return
+          } catch (err) {
+            console.error('Failed to notify opener:', err)
+          }
+        }
+
+        // Fallback: regular redirect if no opener found
         router.push(`/dashboard/results/${response.resultId}`)
       } else {
         hasSubmittedRef.current = false
@@ -167,52 +259,6 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
     return () => clearInterval(timer)
   }, [timeLeft, handleSubmit, isExamStarted])
 
-  // Question Randomization
-  useEffect(() => {
-    if (!isExamStarted) return
-
-    // Use sessionId for seed if available to keep order consistent on refresh
-    const seedString = `${sessionId || 'new'}-${user?.id || 'guest'}-${test.id}`
-    let seed = 0
-    for (let i = 0; i < seedString.length; i++) {
-      seed = (seed << 5) - seed + seedString.charCodeAt(i)
-      seed |= 0
-    }
-
-    const seededRandom = () => {
-      seed = (seed * 9301 + 49297) % 233280
-      return seed / 233280
-    }
-
-    // Shuffle Questions
-    const indices = originalQuestions.map((_, i) => i)
-    for (let i = indices.length - 1; i > 0; i--) {
-      const j = Math.floor(seededRandom() * (i + 1))
-      ;[indices[i], indices[j]] = [indices[j], indices[i]]
-    }
-    const shuffled = indices.map((i: number) => originalQuestions[i])
-    setShuffledQuestions(shuffled)
-
-    // Shuffle Options
-    const shuffledOpts: Record<string, any[]> = {}
-    shuffled.forEach((q: any) => {
-      if (q && q.options && Array.isArray(q.options) && q.options.length > 0) {
-        const optIndices = q.options.map((_: any, i: number) => i)
-        for (let i = optIndices.length - 1; i > 0; i--) {
-          const j = Math.floor(seededRandom() * (i + 1))
-          ;[optIndices[i], optIndices[j]] = [optIndices[j], optIndices[i]]
-        }
-        shuffledOpts[q.id] = optIndices.map((i: number) => {
-          const opt = q.options![i]
-          return {
-            text: opt ? (typeof opt === 'string' ? opt : opt.text || '') : '',
-            originalIndex: opt && typeof opt === 'object' ? opt.index : i
-          }
-        })
-      }
-    })
-    setShuffledOptions(shuffledOpts)
-  }, [isExamStarted, originalQuestions, test.id, user?.id])
 
   // Track visited questions
   useEffect(() => {
@@ -238,8 +284,9 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
 
   const handleOptionSelect = (optionIdx: number) => {
     const isMultiple = currentQuestion.question_type === 'multiple'
+    let newSelection: number | number[] | null = null
+
     setAnswers(prev => {
-      let newSelection: number | number[] | null = null
       if (isMultiple) {
         const current = (prev[currentQuestion.id] as number[]) || []
         if (current.includes(optionIdx)) {
@@ -250,10 +297,13 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
       } else {
         newSelection = optionIdx
       }
-      const next = { ...prev, [currentQuestion.id]: newSelection as any }
-      saveProgress(currentQuestion.id, newSelection, flaggedQuestions.has(currentQuestion.id))
-      return next
+      return { ...prev, [currentQuestion.id]: newSelection as any }
     })
+
+    // Defer the side effect outside of the React state updater
+    setTimeout(() => {
+      saveProgress(currentQuestion.id, newSelection, flaggedQuestions.has(currentQuestion.id))
+    }, 0)
   }
 
   const toggleFlag = () => {
@@ -264,7 +314,10 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
       else next.add(currentQuestion.id)
       return next
     })
-    saveProgress(currentQuestion.id, answers[currentQuestion.id] ?? null, willBeFlagged)
+
+    setTimeout(() => {
+      saveProgress(currentQuestion.id, answers[currentQuestion.id] ?? null, willBeFlagged)
+    }, 0)
   }
 
   // Session Initialization
@@ -428,9 +481,9 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
                 <button
                   onClick={handleStartExam}
                   disabled={startConfirmText.toUpperCase() !== 'START' || isSubmitting}
-                  className="w-full bg-primary text-white py-6 rounded-3xl font-black text-xs uppercase tracking-[0.3em] hover:bg-slate-900 transition-all disabled:opacity-20 shadow-xl shadow-primary/20 flex items-center justify-center gap-4 group"
+                  className="w-full bg-primary text-white py-6 rounded-3xl font-black text-xs uppercase tracking-[0.3em] hover:bg-primary/80 transition-all disabled:opacity-20 shadow-xl shadow-primary/20 flex items-center justify-center gap-4 group"
                 >
-                  {isSubmitting ? 'Starting...' : 'Start Exam'} <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  {isSubmitting ? 'Exam Starting...' : 'Start Exam'} <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
               </div>
             </div>
@@ -484,7 +537,7 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
               Your examination has been automatically terminated due to multiple security violations.
             </p>
           </div>
-          
+
           <div className="bg-red-50 p-6 rounded-3xl border border-red-100 text-left">
             <h3 className="text-red-600 font-black text-xs uppercase tracking-widest mb-2 flex items-center gap-2">
               <Shield className="w-4 h-4" /> Security Violation Record
@@ -549,7 +602,7 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
                   We couldn&apos;t find any questions for this test set. Please check back later or contact support.
                 </p>
               </div>
-              <button 
+              <button
                 onClick={() => router.push('/dashboard/modules')}
                 className="bg-primary text-white px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-900 transition-all shadow-xl shadow-primary/20"
               >
@@ -558,106 +611,115 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
             </div>
           ) : (
             <div className="bg-white p-8 md:p-12 rounded-[2.5rem] border border-slate-100 shadow-2xl min-h-[500px] flex flex-col">
-            <div className="flex items-center justify-between mb-10">
-              <div className="flex items-center gap-4">
-                <span className="px-4 py-2 bg-slate-50 border border-slate-100 text-[#0f172a] rounded-xl font-black text-xs uppercase tracking-widest">
-                  Question {currentQuestionIdx + 1} of {shuffledQuestions.length}
-                </span>
-                <button
-                  onClick={toggleFlag}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-[0.65rem] font-black uppercase tracking-widest transition-all ${flaggedQuestions.has(currentQuestion?.id) ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-slate-50 border-slate-100 text-slate-400 hover:text-amber-500'}`}
-                >
-                  <Flag className={`w-3.5 h-3.5 ${flaggedQuestions.has(currentQuestion?.id) ? 'fill-current' : ''}`} />
-                  {flaggedQuestions.has(currentQuestion?.id) ? 'Flagged' : 'Flag for Review'}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex-1 space-y-10">
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <span className={`px-3 py-1 border rounded-full text-[0.55rem] font-black uppercase tracking-widest ${currentQuestion?.question_type === 'multiple' ? 'bg-primary/5 text-primary border-primary/10' : 'bg-slate-50 text-slate-500 border-slate-100'}`}>
-                    {currentQuestion?.question_type === 'multiple' ? 'Multiple Choice' : 'Single Choice'}
+              <div className="flex items-center justify-between mb-10">
+                <div className="flex items-center gap-4">
+                  <span className="px-4 py-2 bg-slate-50 border border-slate-100 text-[#0f172a] rounded-xl font-black text-xs uppercase tracking-widest">
+                    Question {currentQuestionIdx + 1} of {shuffledQuestions.length}
                   </span>
+                  <button
+                    onClick={toggleFlag}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-[0.65rem] font-black uppercase tracking-widest transition-all ${flaggedQuestions.has(currentQuestion?.id) ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-slate-50 border-slate-100 text-slate-400 hover:text-amber-500'}`}
+                  >
+                    <Flag className={`w-3.5 h-3.5 ${flaggedQuestions.has(currentQuestion?.id) ? 'fill-current' : ''}`} />
+                    {flaggedQuestions.has(currentQuestion?.id) ? 'Flagged' : 'Flag for Review'}
+                  </button>
                 </div>
-                <h2 className="text-2xl md:text-3xl font-black text-[#0f172a] leading-tight">
-                  {currentQuestion?.question_text}
-                </h2>
               </div>
 
-              <div className="grid grid-cols-1 gap-4">
-                {(shuffledOptions[currentQuestion?.id] || []).map((option, idx) => {
-                  const isSelected = Array.isArray(answers[currentQuestion?.id])
-                    ? (answers[currentQuestion?.id] as number[]).includes(option.originalIndex)
-                    : answers[currentQuestion?.id] === option.originalIndex
+              <div className="flex-1 space-y-10">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className={`px-3 py-1 border rounded-full text-[0.55rem] font-black uppercase tracking-widest ${currentQuestion?.question_type === 'multiple' ? 'bg-primary/5 text-primary border-primary/10' : 'bg-slate-50 text-slate-500 border-slate-100'}`}>
+                      {currentQuestion?.question_type === 'multiple' ? 'Multiple Choice' : 'Single Choice'}
+                    </span>
+                  </div>
+                  <h2 className="text-2xl md:text-3xl font-black text-[#0f172a] leading-tight flex-1">
+                    {currentQuestion?.question_text}
+                  </h2>
+                  {currentQuestion?.image_url && (
+                    <div className="w-full max-w-2xl mx-auto rounded-2xl overflow-hidden border border-slate-100 shadow-sm bg-slate-50 mt-6">
+                      <img
+                        src={currentQuestion.image_url}
+                        alt="Question attachment"
+                        className="w-full h-auto object-contain max-h-[400px]"
+                      />
+                    </div>
+                  )}
+                </div>
 
-                  return (
-                    <button
-                      key={idx}
-                      onClick={() => handleOptionSelect(option.originalIndex)}
-                      className={`p-6 rounded-[1.5rem] text-left transition-all flex items-center gap-6 border ${isSelected ? 'bg-primary/5 border-primary ring-1 ring-primary' : 'bg-slate-50 border-slate-100 hover:border-primary/20'}`}
-                    >
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 ${isSelected ? 'bg-primary text-white' : 'bg-white border border-slate-100 text-slate-400'}`}>
-                        {String.fromCharCode(65 + idx)}
-                      </div>
-                      <span className="flex-1 font-bold text-[#0f172a]">{option.text}</span>
-                    </button>
-                  )
-                })}
+                <div className="grid grid-cols-1 gap-4">
+                  {(shuffledOptions[currentQuestion?.id] || []).map((option, idx) => {
+                    const isSelected = Array.isArray(answers[currentQuestion?.id])
+                      ? (answers[currentQuestion?.id] as number[]).includes(option.originalIndex)
+                      : answers[currentQuestion?.id] === option.originalIndex
+
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => handleOptionSelect(option.originalIndex)}
+                        className={`p-6 rounded-[1.5rem] text-left transition-all flex items-center gap-6 border ${isSelected ? 'bg-primary/5 border-primary ring-1 ring-primary' : 'bg-slate-50 border-slate-100 hover:border-primary/20'}`}
+                      >
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 ${isSelected ? 'bg-primary text-white' : 'bg-white border border-slate-100 text-slate-400'}`}>
+                          {String.fromCharCode(65 + idx)}
+                        </div>
+                        <span className="flex-1 font-bold text-[#0f172a]">{option.text}</span>
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
-            </div>
 
-            <div className="flex items-center justify-between mt-12 pt-8 border-t border-slate-50">
-              <button
-                disabled={currentQuestionIdx === 0}
-                onClick={() => setCurrentQuestionIdx(prev => prev - 1)}
-                className="p-4 bg-slate-50 text-slate-400 rounded-2xl hover:bg-slate-100 hover:text-primary transition-all disabled:opacity-30"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
-
-              <div className="flex gap-4">
+              <div className="flex items-center justify-between mt-12 pt-8 border-t border-slate-50">
                 <button
-                  onClick={() => {
-                    setAnswers(prev => {
-                      const next = { ...prev }
+                  disabled={currentQuestionIdx === 0}
+                  onClick={() => setCurrentQuestionIdx(prev => prev - 1)}
+                  className="p-4 bg-slate-50 text-slate-400 rounded-2xl hover:bg-slate-100 hover:text-primary transition-all disabled:opacity-30"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => {
+                      setAnswers(prev => {
+                        const next = { ...prev }
+                        if (currentQuestion?.id) {
+                          delete next[currentQuestion.id]
+                        }
+                        return next
+                      })
                       if (currentQuestion?.id) {
-                        delete next[currentQuestion.id]
+                        saveProgress(currentQuestion.id, null, flaggedQuestions.has(currentQuestion.id))
                       }
-                      return next
-                    })
-                    if (currentQuestion?.id) {
-                      saveProgress(currentQuestion.id, null, flaggedQuestions.has(currentQuestion.id))
-                    }
-                  }}
-                  className="px-6 py-4 text-xs font-black text-slate-400 hover:text-red-500 transition-colors flex items-center gap-2 uppercase tracking-widest"
-                >
-                  <RotateCcw className="w-4 h-4" /> Clear Selection
-                </button>
-                <button
-                  onClick={() => {
-                    if (currentQuestionIdx < shuffledQuestions.length - 1) {
-                      setCurrentQuestionIdx(prev => prev + 1)
-                    } else {
-                      setShowConfirmSubmit(true)
-                    }
-                  }}
-                  className="bg-slate-900 text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-primary transition-all flex items-center gap-3"
-                >
-                  {currentQuestionIdx === shuffledQuestions.length - 1 ? 'Review & Submit' : 'Save & Next'}
-                  <ChevronRight className="w-5 h-5 transition-transform" />
-                </button>
+                    }}
+                    className="px-6 py-4 text-xs font-black text-slate-400 hover:text-red-500 transition-colors flex items-center gap-2 uppercase tracking-widest"
+                  >
+                    <RotateCcw className="w-4 h-4" /> Clear Selection
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (currentQuestionIdx < shuffledQuestions.length - 1) {
+                        setCurrentQuestionIdx(prev => prev + 1)
+                      } else {
+                        setShowConfirmSubmit(true)
+                      }
+                    }}
+                    className="bg-primary text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-primary/80 transition-all flex items-center gap-3"
+                  >
+                    {currentQuestionIdx === shuffledQuestions.length - 1 ? 'Review & Submit' : 'Save & Next'}
+                    <ChevronRight className="w-5 h-5 transition-transform" />
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
 
         {/* Sidebar */}
         <div className="xl:col-span-1">
           <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-2xl sticky top-32">
             <h3 className="text-xl font-black text-[#0f172a] mb-6">Question Palette</h3>
-            
+
             <div className="grid grid-cols-4 sm:grid-cols-6 xl:grid-cols-4 gap-3 mb-8">
               {shuffledQuestions.map((q, idx) => {
                 if (!q) return null
@@ -716,7 +778,7 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
                 </span>
               </div>
               <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                <div 
+                <div
                   className={`h-full transition-all duration-500 ${violationCount >= maxViolations - 1 ? 'bg-red-500' : violationCount >= maxViolations / 2 ? 'bg-amber-500' : 'bg-green-500'}`}
                   style={{ width: `${(violationCount / maxViolations) * 100}%` }}
                 ></div>
@@ -743,7 +805,7 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
 
       {!isFullscreen && isExamStarted && (
         <div className="fixed top-8 left-8 z-[200] animate-in slide-in-from-top-10 duration-500">
-          <button 
+          <button
             onClick={requestFullscreen}
             className="bg-amber-500 text-white px-6 py-3 rounded-2xl font-black text-[0.65rem] uppercase tracking-widest flex items-center gap-2 shadow-xl shadow-amber-500/20"
           >
@@ -777,7 +839,7 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
           </div>
         </div>
       )}
-      
+
       {isMultiMonitor && (
         <div className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[999] flex items-center justify-center p-6 text-center animate-in fade-in duration-500">
           <div className="max-w-2xl w-full bg-white p-12 md:p-16 rounded-[3.5rem] border border-red-100 shadow-2xl space-y-8">
@@ -787,11 +849,11 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
             <div className="space-y-4">
               <h1 className="text-3xl md:text-4xl font-black text-[#0f172a] tracking-tight uppercase">Multiple Monitors Detected</h1>
               <p className="text-slate-500 font-medium text-lg leading-relaxed">
-                To maintain exam integrity, we have detected multiple screens or an extended display. 
+                To maintain exam integrity, we have detected multiple screens or an extended display.
                 <span className="block mt-4 text-[#0f172a] font-black">Please switch to a single monitor to continue your exam.</span>
               </p>
             </div>
-            
+
             <div className="bg-amber-50 p-6 rounded-3xl border border-amber-100 text-left">
               <h3 className="text-amber-600 font-black text-xs uppercase tracking-widest mb-2 flex items-center gap-2">
                 <AlertCircle className="w-4 h-4" /> Why am I seeing this?

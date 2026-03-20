@@ -47,6 +47,11 @@ const DEFAULT_CONFIG: AntiCheatConfig = {
   violationTimeout: 30
 }
 
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
 export function useAntiCheat({
   userId,
   examId,
@@ -65,10 +70,6 @@ export function useAntiCheat({
   const violationLoggedRef = useRef<boolean>(false)
   
   const violationTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map())
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
   
   const finalConfig = { ...DEFAULT_CONFIG, ...config }
 
@@ -99,16 +100,12 @@ export function useAntiCheat({
         })
 
       if (error) {
-        console.error('Failed to log violation:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code,
-          violation: {
-            user_id: userId,
-            exam_id: examId,
-            violation_type: violationType
-          }
+        console.error('Failed to log violation. Supabase error:', error)
+        console.error('Violation data sent:', {
+          user_id: userId,
+          exam_id: examId,
+          violation_type: violationType,
+          details
         })
       }
 
@@ -191,36 +188,6 @@ export function useAntiCheat({
     }
   }, [finalConfig.enablePrintScreenDetection, logViolation, showWarningMessage])
 
-  // Tab switch and window focus detection
-  const detectTabSwitch = useCallback(() => {
-    if (!finalConfig.enableTabSwitchDetection) return
-
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        logViolation('tab_switch', { 
-          hidden: true, 
-          timestamp: Date.now() 
-        })
-        showWarningMessage('⚠️ Tab switching detected! This violation has been logged.')
-      }
-    }
-
-    const handleBlur = () => {
-      logViolation('window_minimize', { 
-        timestamp: Date.now() 
-      })
-      showWarningMessage('⚠️ Window focus lost! This violation has been logged.')
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    window.addEventListener('blur', handleBlur)
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-      window.removeEventListener('blur', handleBlur)
-    }
-  }, [finalConfig.enableTabSwitchDetection, logViolation, showWarningMessage])
-
   // Fullscreen management
   const requestFullscreen = useCallback(async () => {
     if (!finalConfig.enableFullscreenMode) return
@@ -236,9 +203,86 @@ export function useAntiCheat({
       }
       setIsFullscreen(true)
     } catch (error) {
-      console.error('Failed to request fullscreen:', error)
+      console.debug('Failed to request fullscreen (likely blocked without gesture):', error)
     }
   }, [finalConfig.enableFullscreenMode])
+
+  const exitFullscreen = useCallback(async () => {
+    if (typeof document === 'undefined') return
+
+    try {
+      if (document.fullscreenElement || 
+          (document as any).webkitFullscreenElement || 
+          (document as any).msFullscreenElement) {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen()
+        } else if ((document as any).webkitExitFullscreen) {
+          await (document as any).webkitExitFullscreen()
+        } else if ((document as any).msExitFullscreen) {
+          await (document as any).msExitFullscreen()
+        }
+      }
+      setIsFullscreen(false)
+    } catch (error) {
+      // Catch "Permissions check failed" or other browser-specific errors
+      console.warn('Fullscreen exit handled but with error:', error)
+      setIsFullscreen(false) // Assume we are out or failed gracefully
+    }
+  }, [])
+
+  // Tab switch and window focus detection
+  const detectTabSwitch = useCallback(() => {
+    if (!finalConfig.enableTabSwitchDetection) return
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        logViolation('tab_switch', { 
+          hidden: true, 
+          timestamp: Date.now() 
+        })
+        showWarningMessage('⚠️ Tab switching detected! This violation has been logged.')
+      } else {
+        // Automatically attempt to re-enter fullscreen when returning to tab
+        if (finalConfig.enableFullscreenMode) {
+          // Direct call might fail, so we also add a one-time click listener
+          requestFullscreen()
+          window.addEventListener('click', function reenter() {
+            requestFullscreen()
+            window.removeEventListener('click', reenter)
+          }, { once: true })
+        }
+      }
+    }
+
+    const handleFocus = () => {
+      // Automatically attempt to re-enter fullscreen when window gets focus
+      if (finalConfig.enableFullscreenMode) {
+        // Direct call might fail, so we also add a one-time click listener
+        requestFullscreen()
+        window.addEventListener('click', function reenter() {
+          requestFullscreen()
+          window.removeEventListener('click', reenter)
+        }, { once: true })
+      }
+    }
+
+    const handleBlur = () => {
+      logViolation('window_minimize', { 
+        timestamp: Date.now() 
+      })
+      showWarningMessage('⚠️ Window focus lost! This violation has been logged.')
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('blur', handleBlur)
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('blur', handleBlur)
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [finalConfig.enableTabSwitchDetection, finalConfig.enableFullscreenMode, logViolation, showWarningMessage, requestFullscreen])
 
   const detectFullscreenExit = useCallback(() => {
     if (!finalConfig.enableFullscreenMode) return
@@ -270,29 +314,6 @@ export function useAntiCheat({
       document.removeEventListener('msfullscreenchange', handleFullscreenChange)
     }
   }, [finalConfig.enableFullscreenMode, isFullscreen, logViolation, showWarningMessage])
-
-  const exitFullscreen = useCallback(async () => {
-    if (typeof document === 'undefined') return
-
-    try {
-      if (document.fullscreenElement || 
-          (document as any).webkitFullscreenElement || 
-          (document as any).msFullscreenElement) {
-        if (document.exitFullscreen) {
-          await document.exitFullscreen()
-        } else if ((document as any).webkitExitFullscreen) {
-          await (document as any).webkitExitFullscreen()
-        } else if ((document as any).msExitFullscreen) {
-          await (document as any).msExitFullscreen()
-        }
-      }
-      setIsFullscreen(false)
-    } catch (error) {
-      // Catch "Permissions check failed" or other browser-specific errors
-      console.warn('Fullscreen exit handled but with error:', error)
-      setIsFullscreen(false) // Assume we are out or failed gracefully
-    }
-  }, [])
 
   // Right click and text selection blocking
   const blockInteractions = useCallback(() => {

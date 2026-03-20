@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import DashboardSidebar from './DashboardSidebar'
 import DashboardHeader from './DashboardHeader'
 
@@ -18,6 +19,21 @@ export default function DashboardLayoutWrapper({
   avatarUrl
 }: DashboardLayoutWrapperProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const router = useRouter()
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // Security: Validate the origin if needed, but for same-origin tabs it's usually fine
+      if (event.data?.type === 'TEST_COMPLETED' && event.data?.resultId) {
+        // Redirection on the main dashboard tab
+        router.push(`/dashboard/results/${event.data.resultId}`)
+        router.refresh()
+      }
+    }
+
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [router])
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex relative">
