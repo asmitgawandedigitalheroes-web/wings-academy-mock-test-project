@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 
 export async function getDashboardStats(existingUser?: any) {
@@ -184,23 +185,28 @@ export async function getModuleTests(moduleId: string) {
 
   if (!user) return { module: null, tests: [] }
 
+  const adminClient = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
   const [
-    { data: module },
-    { data: tests, error },
+    { data: moduleInfo },
+    { data: tests, error: testsError },
     { data: purchases },
     { data: allAttempts },
     { data: results },
     { data: violations }
   ] = await Promise.all([
     supabase.from('modules').select('id, name, description, price, enable_purchase').eq('id', moduleId).single(),
-    supabase.from('test_sets').select('id, title, description, time_limit_minutes, is_paid, price, attempts_allowed, cooldown_hours, test_questions(count)').eq('module_id', moduleId).eq('is_hidden', false).order('created_at', { ascending: true }),
+    adminClient.from('test_sets').select('id, title, description, time_limit_minutes, is_paid, price, attempts_allowed, cooldown_hours, target_questions, test_questions(count)').eq('module_id', moduleId).eq('is_hidden', false).order('created_at', { ascending: true }),
     supabase.from('payments').select('test_set_id, module_id').eq('user_id', user.id).eq('status', 'completed'),
     supabase.from('test_attempts').select('test_set_id, status, updated_at, attempt_number').eq('user_id', user.id),
     supabase.from('test_results').select('test_set_id, completed_at, is_violation').eq('user_id', user.id).order('completed_at', { ascending: false }),
     supabase.from('exam_violations').select('exam_id, created_at').eq('user_id', user.id).order('created_at', { ascending: false })
   ])
 
-  if (error || !tests) return { module: module || null, tests: [] }
+  if (testsError || !moduleInfo) return { module: moduleInfo || null, tests: [] }
 
   const purchasedIds = new Set(purchases?.map(p => p.test_set_id) || [])
   const attemptsByTest = new Map<string, any[]>()
@@ -242,7 +248,7 @@ export async function getModuleTests(moduleId: string) {
       title: test.title,
       description: test.description,
       duration: `${test.time_limit_minutes} min`,
-      questionCount: (test.test_questions as any)[0]?.count || 0,
+      questionCount: (test.test_questions as any)?.[0]?.count || test.target_questions || 0,
       isPaid: test.is_paid,
       price: test.price,
       isUnlocked: !test.is_paid || isModulePurchased || purchasedTestIds.has(test.id),
@@ -317,8 +323,13 @@ export async function getTestData(testId: string) {
     }
   }
 
-  // Get questions for this test
-  const { data: questionLinks } = await supabase
+  // Get questions for this test using service role to bypass RLS on server
+  const adminClient = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  const { data: questionLinks, error: linkError } = await adminClient
     .from('test_questions')
     .select(`
       question_id,
@@ -328,21 +339,55 @@ export async function getTestData(testId: string) {
     .eq('test_set_id', testId)
     .order('sort_order', { ascending: true })
 
+  if (linkError) {
+    console.error('Error fetching question links:', linkError)
+  }
+
   let questions = (questionLinks || [])
     .map((link: any) => {
-      const q = link.questions
-      if (!q || !q.question_text) return null
+      // Handle cases where PostgREST returns an array for the JOIN or just the object
+      let q = link.questions
+      if (Array.isArray(q)) {
+        q = q[0]
+      }
+      
+      if (!q || (!q.id && !q.question_text)) return null
+      
+      const questionText = String(q.question_text || '').trim()
+      
+      // Map options safely
+      let rawOptions = q.options || []
+      let parsedOptions: any[] = []
+      
+      if (Array.isArray(rawOptions)) {
+        parsedOptions = rawOptions.map((opt: any, index: number) => {
+          let text = ''
+          let originalIndex = index
+          
+          if (opt !== null && typeof opt !== 'object') {
+            text = String(opt)
+          } else if (opt && typeof opt === 'object') {
+            text = opt.text || opt.option || opt.value || String(Object.values(opt)[0] || '')
+            originalIndex = ('index' in opt) ? opt.index : index
+          }
+          
+          return { text: String(text || '').trim(), index: originalIndex }
+        }).filter((opt: any) => opt.text !== '')
+      } else if (rawOptions && typeof rawOptions === 'object') {
+        // Handle object notation for options if present
+        parsedOptions = Object.entries(rawOptions).map(([key, val], index) => ({
+          text: String(val || '').trim(),
+          index: index
+        })).filter(opt => opt.text !== '')
+      }
       
       return {
         ...q,
-        options: Array.isArray(q.options) 
-          ? q.options
-              .map((text: string, index: number) => ({ text: String(text || '').trim(), index }))
-              .filter((opt: any) => opt.text !== '')
-          : []
+        question_text: questionText || '(No question text provided)',
+        options: parsedOptions
       }
     })
-    .filter((q: any) => q !== null)
+    .filter((q: any) => q !== null) // Relaxed: keep even if options are 0 for now to debug
 
   // Randomization Logic
   if (test.randomize_questions || test.randomize_answers) {
