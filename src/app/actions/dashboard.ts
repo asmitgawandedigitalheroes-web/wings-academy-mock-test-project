@@ -261,7 +261,7 @@ export async function getModuleTests(moduleId: string) {
 
   return { 
     module: { 
-      ...module, 
+      ...moduleInfo, 
       isUnlocked: purchases?.some(p => p.module_id === moduleId) 
     }, 
     tests: mappedTests 

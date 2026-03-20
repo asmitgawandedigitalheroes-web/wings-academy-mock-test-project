@@ -10,9 +10,9 @@ interface PageProps {
 
 export default async function ModuleCheckoutPage({ params }: PageProps) {
   const { id } = await params
-  const { module } = await getModuleTests(id)
+  const { module: moduleInfo } = await getModuleTests(id)
 
-  if (!module) {
+  if (!moduleInfo) {
     redirect('/dashboard/modules')
   }
 
@@ -24,7 +24,7 @@ export default async function ModuleCheckoutPage({ params }: PageProps) {
     }
   }
 
-  const price = module.price || 49
+  const price = moduleInfo.price || 49
 
   return (
     <div className="max-w-6xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
@@ -47,7 +47,7 @@ export default async function ModuleCheckoutPage({ params }: PageProps) {
                       <div className="w-16 h-16 rounded-2xl bg-primary/5 flex items-center justify-center text-primary">
                           <LockOpen className="w-8 h-8" />
                       </div>
-                      <h3 className="text-2xl font-black text-[#0f172a]">{module.name}</h3>
+                      <h3 className="text-2xl font-black text-[#0f172a]">{moduleInfo.name}</h3>
                       <p className="text-slate-500 font-medium text-sm">Gain permanent access to all 5 tests in this module including detailed result explanations.</p>
                   </div>
 

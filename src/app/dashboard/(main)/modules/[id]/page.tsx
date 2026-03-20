@@ -10,9 +10,9 @@ interface PageProps {
 
 export default async function ModuleDetailPage({ params }: PageProps) {
   const { id } = await params
-  const { module, tests } = (await getModuleTests(id)) as { module: any, tests: any[] }
+  const { module: moduleInfo, tests } = await getModuleTests(id)
 
-  if (!module) {
+  if (!moduleInfo) {
     return (
       <div className="py-20 text-center">
         <h2 className="text-2xl font-black text-[#0f172a]">Module not found</h2>
@@ -21,31 +21,34 @@ export default async function ModuleDetailPage({ params }: PageProps) {
     )
   }
 
+  // Use type assertion to handle added properties
+  const typedModule = moduleInfo as any;
+
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
       {/* Header & Breadcrumbs */}
       <div className="space-y-4">
         <BackButton variant="ghost" className="-ml-3" />
         <div>
-          <h1 className="text-4xl font-black text-[#0f172a] tracking-tight">{module.name}</h1>
-          <p className="text-slate-500 font-medium mt-2 max-w-2xl">{module.description || 'Access all mock tests for this module. Practice with timed exams to improve your performance.'}</p>
+          <h1 className="text-4xl font-black text-[#0f172a] tracking-tight">{typedModule.name}</h1>
+          <p className="text-slate-500 font-medium mt-2 max-w-2xl">{typedModule.description || 'Access all mock tests for this module. Practice with timed exams to improve your performance.'}</p>
         </div>
       </div>
 
       {/* Module Purchase CTA */}
-      {!module.isUnlocked && (module.enable_purchase || module.price > 0) && (
+      {!typedModule.isUnlocked && (typedModule.enable_purchase || typedModule.price > 0) && (
         <div className="bg-primary/5 border border-primary/10 rounded-[2.5rem] p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl transition-all group-hover:bg-primary/10" />
           <div className="relative z-10 space-y-4">
             <h2 className="text-2xl md:text-3xl font-black text-[#0f172a]">Unlock Complete Module</h2>
-            <p className="text-slate-500 font-medium max-w-xl">Get full access to all 5 tests in this module, including detailed explanations and performance tracking for just <span className="text-primary font-black">AED {module.price || 49}</span>.</p>
+            <p className="text-slate-500 font-medium max-w-xl">Get full access to all 5 tests in this module, including detailed explanations and performance tracking for just <span className="text-primary font-black">AED {typedModule.price || 49}</span>.</p>
             <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-slate-400 uppercase tracking-widest">
               <span className="flex items-center gap-2"><Zap className="w-4 h-4 text-amber-500" /> 3 Paid Tests</span>
               <span className="flex items-center gap-2"><Target className="w-4 h-4 text-green-500" /> Lifetime Access</span>
             </div>
           </div>
           <Link 
-            href={`/dashboard/checkout/module/${module.id}`}
+            href={`/dashboard/checkout/module/${typedModule.id}`}
             className="relative z-10 bg-primary text-white px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-[#152e75] hover:scale-105 transition-all shadow-xl shadow-primary/20 flex items-center gap-3 group/btn"
           >
             Purchase Module
@@ -117,7 +120,7 @@ export default async function ModuleDetailPage({ params }: PageProps) {
                   <StartTestButton testId={test.id} status="Start" />
                 ) : (
                   <Link 
-                    href={`/dashboard/checkout/module/${module.id}`}
+                    href={`/dashboard/checkout/module/${typedModule.id}`}
                     className="w-full md:w-auto px-8 py-4 bg-slate-50 text-[#0f172a] hover:bg-slate-100 rounded-2xl font-black text-xs uppercase tracking-widest border border-slate-100 flex items-center justify-center gap-3 transition-all"
                   >
                     Unlock to access
