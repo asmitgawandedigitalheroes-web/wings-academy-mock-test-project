@@ -16,12 +16,13 @@ import {
   ShieldCheck
 } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
+import { getAllPayments } from '@/app/actions/admin'
 
 export default function PaymentsPage() {
   const [payments, setPayments] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const supabase = createClient()
+  const [statusFilter, setStatusFilter] = useState('All Status')
 
   useEffect(() => {
     fetchPayments()
@@ -29,35 +30,63 @@ export default function PaymentsPage() {
 
   const fetchPayments = async () => {
     setLoading(true)
-    const { data, error } = await supabase
-      .from('payments')
-      .select(`
-        id,
-        amount,
-        status,
-        transaction_id,
-        created_at,
-        profiles (full_name, email),
-        test_sets (title),
-        modules (name)
-      `)
-      .order('created_at', { ascending: false })
-
-    if (!error) {
-      setPayments(data || [])
+    try {
+      const result = await getAllPayments()
+      if (result.success && result.data) {
+        setPayments(result.data)
+      } else {
+        console.error('Failed to fetch payments:', result.error)
+      }
+    } catch (err) {
+      console.error('Unexpected error in fetchPayments:', err)
     }
     setLoading(false)
   }
 
-  const filteredPayments = payments.filter(pay => 
-    pay.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    pay.test_sets?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    pay.modules?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    pay.transaction_id?.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredPayments = payments.filter(pay => {
+    const matchesSearch = 
+      pay.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      pay.test_sets?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      pay.modules?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      pay.transaction_id?.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    const matchesStatus = statusFilter === 'All Status' || pay.status?.toLowerCase() === statusFilter.toLowerCase()
+    
+    return matchesSearch && matchesStatus
+  })
 
-  const totalRevenue = payments.reduce((sum, p) => sum + (p.amount || 0), 0)
-  const averageTicket = payments.length > 0 ? Math.round(totalRevenue / payments.length) : 0
+  const handleDownloadReport = () => {
+    if (filteredPayments.length === 0) return
+
+    const headers = ['Transaction ID', 'Student Name', 'Student Email', 'Item', 'Amount (AED)', 'Date', 'Status']
+    const csvContent = [
+      headers.join(','),
+      ...filteredPayments.map(p => [
+        p.transaction_id || '',
+        `"${p.profiles?.full_name || ''}"`,
+        p.profiles?.email || '',
+        `"${p.test_sets?.title || p.modules?.name || ''}"`,
+        p.amount || 0,
+        new Date(p.created_at).toLocaleDateString(),
+        p.status || ''
+      ].join(','))
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `financial_report_${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  const completedPayments = payments.filter(p => p.status === 'completed')
+  const totalRevenue = completedPayments.reduce((sum, p) => sum + (p.amount || 0), 0)
+  const averageTicket = completedPayments.length > 0 ? Math.round(totalRevenue / completedPayments.length) : 0
+  const successRate = payments.length > 0 ? Math.round((completedPayments.length / payments.length) * 100) : 0
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -67,7 +96,11 @@ export default function PaymentsPage() {
           <p className="text-slate-500 font-medium mt-1">Track transactions and platform earnings.</p>
         </div>
         <div className="flex items-center gap-4">
-          <button className="bg-white border-2 border-slate-200 text-[#0f172a] px-6 py-3 rounded-2xl font-black shadow-lg shadow-slate-200/50 hover:bg-slate-50 transition-all flex items-center gap-2">
+          <button 
+            onClick={handleDownloadReport}
+            disabled={filteredPayments.length === 0}
+            className="bg-white border-2 border-slate-200 text-[#0f172a] px-6 py-3 rounded-2xl font-black shadow-lg shadow-slate-200/50 hover:bg-slate-50 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             <Download className="w-5 h-5" />
             Financial Report
           </button>
@@ -83,7 +116,7 @@ export default function PaymentsPage() {
             </div>
             <div>
               <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Total Revenue</p>
-              <h3 className="text-3xl font-black text-[#0f172a] mt-1">₹{totalRevenue.toLocaleString()}</h3>
+              <h3 className="text-3xl font-black text-[#0f172a] mt-1">AED{totalRevenue.toLocaleString()}</h3>
             </div>
           </div>
         </div>
@@ -94,7 +127,7 @@ export default function PaymentsPage() {
             </div>
             <div>
               <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Avg. Transaction</p>
-              <h3 className="text-3xl font-black text-[#0f172a] mt-1">₹{averageTicket}</h3>
+              <h3 className="text-3xl font-black text-[#0f172a] mt-1">AED{averageTicket}</h3>
             </div>
           </div>
         </div>
@@ -105,7 +138,7 @@ export default function PaymentsPage() {
             </div>
             <div>
               <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Total Sales</p>
-              <h3 className="text-3xl font-black text-[#0f172a] mt-1">{payments.length}</h3>
+              <h3 className="text-3xl font-black text-[#0f172a] mt-1">{completedPayments.length}</h3>
             </div>
           </div>
         </div>
@@ -116,7 +149,7 @@ export default function PaymentsPage() {
             </div>
             <div>
               <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Success Rate</p>
-              <h3 className="text-3xl font-black text-[#0f172a] mt-1">98.5%</h3>
+              <h3 className="text-3xl font-black text-[#0f172a] mt-1">{successRate}%</h3>
             </div>
           </div>
         </div>
@@ -136,10 +169,14 @@ export default function PaymentsPage() {
         </div>
         <div className="relative w-full md:w-48">
           <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <select className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl outline-none appearance-none font-bold cursor-pointer">
-            <option>All Methods</option>
-            <option>Credit Card</option>
-            <option>UPI</option>
+          <select 
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl outline-none appearance-none font-bold cursor-pointer text-[#0f172a]"
+          >
+            <option>All Status</option>
+            <option>Completed</option>
+            <option>Pending</option>
           </select>
           <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
         </div>
@@ -202,7 +239,7 @@ export default function PaymentsPage() {
                         </p>
                     </td>
                     <td className="px-8 py-6">
-                      <p className="text-sm font-black text-[#0f172a]">₹{p.amount}</p>
+                      <p className="text-sm font-black text-[#0f172a]">AED{p.amount}</p>
                     </td>
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
@@ -211,9 +248,13 @@ export default function PaymentsPage() {
                       </div>
                     </td>
                     <td className="px-8 py-6 text-right">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.65rem] font-black uppercase tracking-wider bg-green-100 text-green-700">
-                        <CheckCircle2 className="w-3 h-3" />
-                        Completed
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.65rem] font-black uppercase tracking-wider ${
+                        p.status === 'completed'
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-orange-100 text-orange-700'
+                      }`}>
+                        {p.status === 'completed' ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                        {p.status === 'completed' ? 'Completed' : 'Pending'}
                       </span>
                     </td>
                   </tr>
@@ -245,11 +286,13 @@ export default function PaymentsPage() {
                             </div>
                             <div>
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{p.transaction_id || 'Pay-ID'}</p>
-                                <p className="text-sm font-black text-[#0f172a]">₹{p.amount}</p>
+                                <p className="text-sm font-black text-[#0f172a]">AED{p.amount}</p>
                             </div>
                         </div>
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.6rem] font-black uppercase tracking-wider bg-green-100 text-green-700">
-                            Completed
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.6rem] font-black uppercase tracking-wider ${
+                          p.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
+                        }`}>
+                            {p.status === 'completed' ? 'Completed' : 'Pending'}
                         </span>
                     </div>
 

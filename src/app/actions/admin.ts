@@ -4,6 +4,17 @@ import { createClient } from '@/utils/supabase/server'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { getURL } from '@/utils/url'
+import nodemailer from 'nodemailer'
+
+function createMailTransporter() {
+  const port = parseInt(process.env.SMTP_PORT || '465')
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port,
+    secure: port === 465,
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+  })
+}
 
 export async function addModule(formData: {
   name: string,
@@ -1657,7 +1668,7 @@ export async function grantModuleAccess(userId: string, moduleId: string) {
 
   if (payErr) return { error: payErr.message }
 
-  // Notify the student
+  // Notify the student (in-app)
   await serviceClient.from('notifications').insert({
     user_id: userId,
     type: 'payment_success',
@@ -1665,7 +1676,170 @@ export async function grantModuleAccess(userId: string, moduleId: string) {
     message: `An admin has unlocked the entire "${moduleInfo.name}" module for you. All paid tests are now available.`
   })
 
+  // Send email to student
+  if (process.env.SMTP_HOST) {
+    const { data: student } = await serviceClient
+      .from('profiles')
+      .select('full_name, email')
+      .eq('id', userId)
+      .maybeSingle()
+
+    if (student?.email) {
+      const studentName = student.full_name || 'Student'
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://wings-academy-mock-test-project.vercel.app'
+
+      createMailTransporter().sendMail({
+        from: process.env.SMTP_FROM || process.env.SMTP_USER,
+        to: student.email,
+        subject: `Access Granted — ${moduleInfo.name}`,
+        html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8" /></head>
+<body style="font-family:Arial,sans-serif;background:#f5f5f5;padding:40px;">
+  <div style="max-width:600px;margin:auto;background:white;padding:30px;border-radius:8px;text-align:center;">
+    <h2 style="color:#333;">Module Access Granted!</h2>
+    <p style="font-size:16px;color:#555;">Hi ${studentName},</p>
+    <p style="font-size:16px;color:#555;">
+      An admin has unlocked <strong>${moduleInfo.name}</strong> for you.
+      All paid tests in this module are now available with unlimited attempts.
+    </p>
+    <a href="${siteUrl}/dashboard/modules"
+       style="display:inline-block;margin-top:20px;padding:14px 28px;
+       background:#1e3a8a;color:white;text-decoration:none;
+       border-radius:6px;font-size:16px;font-weight:bold;">
+       Start Practicing
+    </a>
+    <p style="margin-top:30px;font-size:13px;color:#888;">
+      © Wings Academy
+    </p>
+  </div>
+</body>
+</html>`.trim(),
+      }).catch(err => console.error('Access grant email failed:', err.message))
+    }
+  }
+
   revalidatePath(`/admin/users/${userId}`)
   revalidatePath(`/dashboard/modules/${moduleId}`)
   return { success: true }
+}
+
+// Admin manually revokes module access from a student.
+export async function revokeModuleAccess(userId: string, moduleId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) return { error: 'Not authenticated' }
+
+  const serviceClient = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  const { error } = await serviceClient
+    .from('payments')
+    .delete()
+    .eq('user_id', userId)
+    .eq('module_id', moduleId)
+    .eq('status', 'completed')
+
+  if (error) {
+    console.error('Error revoking module access:', error)
+    return { error: error.message }
+  }
+
+  // Get module title for notification
+  const { data: moduleInfo } = await supabase
+    .from('modules')
+    .select('name')
+    .eq('id', moduleId)
+    .single()
+
+  // Notify the student
+  await serviceClient.from('notifications').insert({
+    user_id: userId,
+    type: 'admin_action',
+    title: 'Module Access Revoked',
+    message: `Your access to the "${moduleInfo?.name || 'module'}" module has been revoked by an administrator.`
+  })
+
+  revalidatePath(`/admin/users/${userId}`)
+  revalidatePath(`/dashboard/modules/${moduleId}`)
+  return { success: true }
+}
+
+// Admin manually revokes test access from a student.
+export async function revokeTestAccess(userId: string, testId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) return { error: 'Not authenticated' }
+
+  const serviceClient = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  const { error } = await serviceClient
+    .from('payments')
+    .delete()
+    .eq('user_id', userId)
+    .eq('test_set_id', testId)
+    .eq('status', 'completed')
+
+  if (error) {
+    console.error('Error revoking test access:', error)
+    return { error: error.message }
+  }
+
+  // Get test title for notification
+  const { data: testInfo } = await supabase
+    .from('test_sets')
+    .select('title, module_id')
+    .eq('id', testId)
+    .single()
+
+  // Notify the student
+  await serviceClient.from('notifications').insert({
+    user_id: userId,
+    type: 'admin_action',
+    title: 'Test Access Revoked',
+    message: `Your access to "${testInfo?.title || 'a test'}" has been revoked by an administrator.`
+  })
+
+  revalidatePath(`/admin/users/${userId}`)
+  if (testInfo?.module_id) {
+    revalidatePath(`/dashboard/modules/${testInfo.module_id}`)
+  }
+  return { success: true }
+}
+
+export async function getAllPayments() {
+
+  const supabaseAdmin = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  const { data, error } = await supabaseAdmin
+    .from('payments')
+    .select(`
+      id,
+      amount,
+      status,
+      transaction_id,
+      created_at,
+      profiles (full_name, email),
+      test_sets (title),
+      modules (name)
+    `)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('Error fetching all payments:', error)
+    return { error: error.message }
+  }
+
+  return { success: true, data: data || [] }
 }

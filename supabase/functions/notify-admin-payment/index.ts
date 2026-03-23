@@ -6,12 +6,15 @@
 // Sends an email to the admin(s) so they know a student paid — even if they aren't logged in.
 //
 // REQUIRED ENV VARS (set in Supabase Dashboard → Settings → Edge Functions → Secrets):
-//   RESEND_API_KEY=re_xxxxxxxxxxxx
-//
-// The "from" address must be a verified domain in your Resend account.
+//   SMTP_HOST=smtp.supabase.io
+//   SMTP_PORT=465
+//   SMTP_USER=your-smtp-username
+//   SMTP_PASS=your-smtp-password
+//   SMTP_FROM=Wings Academy <results@wingsacademy.ae>
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import nodemailer from "npm:nodemailer";
 
 const FROM_EMAIL = "Wings Academy <results@wingsacademy.ae>";
 
@@ -159,16 +162,16 @@ Deno.serve(async (req: Request) => {
 </html>
     `.trim();
 
-    // Send via Resend API
-    const resendApiKey = Deno.env.get("RESEND_API_KEY") ?? "";
-    if (!resendApiKey) {
+    // Send via SMTP
+    const smtpHost = Deno.env.get("SMTP_HOST") ?? "";
+    if (!smtpHost) {
       console.warn(
-        "RESEND_API_KEY is not set — email not sent. Add it in Supabase Edge Function secrets."
+        "SMTP_HOST is not set — email not sent. Add SMTP_* vars in Supabase Edge Function secrets."
       );
       return new Response(
         JSON.stringify({
           success: false,
-          message: "RESEND_API_KEY not configured",
+          message: "SMTP not configured",
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -177,36 +180,30 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const emailRes = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${resendApiKey}`,
-        "Content-Type": "application/json",
+    const smtpPort = parseInt(Deno.env.get("SMTP_PORT") ?? "465");
+    const transporter = nodemailer.createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpPort === 465,
+      auth: {
+        user: Deno.env.get("SMTP_USER") ?? "",
+        pass: Deno.env.get("SMTP_PASS") ?? "",
       },
-      body: JSON.stringify({
-        from: FROM_EMAIL,
-        to: adminEmails,
-        subject: `💰 Payment Received — ${studentName} for ${moduleName}`,
-        html: htmlBody,
-      }),
     });
 
-    const emailData = await emailRes.json();
+    await transporter.sendMail({
+      from: Deno.env.get("SMTP_FROM") ?? FROM_EMAIL,
+      to: adminEmails,
+      subject: `💰 Payment Received — ${studentName} for ${moduleName}`,
+      html: htmlBody,
+    });
 
-    if (!emailRes.ok) {
-      console.error("Resend API error:", emailData);
-      throw new Error(`Resend error: ${JSON.stringify(emailData)}`);
-    }
-
-    console.log(
-      `Payment email sent to ${adminEmails.join(", ")} — Resend ID: ${emailData.id}`
-    );
+    console.log(`Payment email sent to ${adminEmails.join(", ")}`);
 
     return new Response(
       JSON.stringify({
         success: true,
         message: `Email sent to ${adminEmails.join(", ")}`,
-        resendId: emailData.id,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

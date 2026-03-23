@@ -4,6 +4,59 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { getURL } from '@/utils/url'
+import nodemailer from 'nodemailer'
+
+async function sendWelcomeEmail(name: string, email: string) {
+  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM, NEXT_PUBLIC_SITE_URL } = process.env
+  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) return
+
+  const siteUrl = NEXT_PUBLIC_SITE_URL || 'https://wings-academy-mock-test-project.vercel.app'
+  const port = parseInt(SMTP_PORT || '465')
+
+  const transporter = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port,
+    secure: port === 465,
+    auth: { user: SMTP_USER, pass: SMTP_PASS },
+  })
+
+  await transporter.sendMail({
+    from: SMTP_FROM || SMTP_USER,
+    to: email,
+    subject: 'Welcome to Wings Academy',
+    html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Welcome to Wings Academy</title>
+</head>
+<body style="font-family:Arial,sans-serif;background:#f5f5f5;padding:40px;">
+  <div style="max-width:600px;margin:auto;background:white;padding:30px;border-radius:8px;text-align:center;">
+    <h2 style="color:#333;">Welcome to Wings Academy, ${name}!</h2>
+    <p style="font-size:16px;color:#555;">
+      Thank you for signing up for your mock test platform.
+    </p>
+    <p style="font-size:16px;color:#555;">
+      Please confirm your email to activate your account and start practicing.
+    </p>
+    <a href="${siteUrl}/login"
+       style="display:inline-block;margin-top:20px;padding:14px 28px;
+       background:#1e3a8a;color:white;text-decoration:none;
+       border-radius:6px;font-size:16px;font-weight:bold;">
+       Go to Login
+    </a>
+    <p style="margin-top:30px;font-size:13px;color:#888;">
+      If you didn't create this account, you can safely ignore this email.
+    </p>
+    <p style="margin-top:20px;font-size:13px;color:#888;">
+      © Wings Academy
+    </p>
+  </div>
+</body>
+</html>`.trim(),
+  })
+}
 
 export async function login(formData: FormData) {
   const supabase = await createClient()
@@ -68,6 +121,11 @@ export async function signup(formData: FormData) {
   if (error) {
     return redirect(`/signup?error=${encodeURIComponent(error.message)}`)
   }
+
+  // Send welcome email (non-blocking — failure won't break signup)
+  sendWelcomeEmail(name, email).catch(err =>
+    console.error('Welcome email failed:', err.message)
+  )
 
   revalidatePath('/admin', 'layout')
   revalidatePath('/dashboard', 'layout')

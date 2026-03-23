@@ -609,6 +609,26 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
           <button
             onClick={async () => {
               await exitFullscreen()
+              
+              // Signal termination to the opening tab (if exists) and close
+              if (typeof window !== 'undefined' && window.opener) {
+                try {
+                  window.opener.postMessage({
+                    type: 'TEST_TERMINATED',
+                    testId: test.id
+                  }, window.location.origin)
+
+                  // Brief delay to ensure message is sent before closing
+                  setTimeout(() => {
+                    window.close()
+                  }, 500)
+                  return
+                } catch (err) {
+                  console.error('Failed to notify opener:', err)
+                }
+              }
+
+              // Fallback: regular redirect if no opener found
               router.push('/dashboard/my-tests')
             }}
             className="w-full bg-[#0f172a] text-white py-6 rounded-3xl font-black text-xs uppercase tracking-[0.2em] hover:bg-red-600 transition-all shadow-xl shadow-red-900/10 flex items-center justify-center gap-3 group"
@@ -812,7 +832,7 @@ export default function TestInterface({ test, user }: TestInterfaceProps) {
           <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-2xl sticky top-32">
             <h3 className="text-xl font-black text-[#0f172a] mb-6">Question Palette</h3>
 
-            <div className="grid grid-cols-4 sm:grid-cols-6 xl:grid-cols-4 gap-3 mb-8">
+            <div className="grid grid-cols-4 sm:grid-cols-6 xl:grid-cols-5 gap-2 mb-8 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
               {shuffledQuestions.map((q, idx) => {
                 if (!q) return null
                 const isCurrent = currentQuestionIdx === idx
