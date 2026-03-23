@@ -10,6 +10,7 @@ importers:
     dependencies:
       '@supabase/ssr':
         specifier: ^0.9.0
+<<<<<<< HEAD
         version: 0.9.0(@supabase/supabase-js@2.99.3)
       '@supabase/supabase-js':
         specifier: ^2.99.0
@@ -17,6 +18,15 @@ importers:
       '@vercel/speed-insights':
         specifier: ^2.0.0
         version: 2.0.0(next@16.1.6(@babel/core@7.29.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react@19.2.3)
+=======
+        version: 0.9.0(@supabase/supabase-js@2.100.0)
+      '@supabase/supabase-js':
+        specifier: ^2.99.0
+        version: 2.100.0
+      '@types/nodemailer':
+        specifier: ^7.0.11
+        version: 7.0.11
+>>>>>>> 468b9fe (build fixed)
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -32,6 +42,12 @@ importers:
       next:
         specifier: 16.1.6
         version: 16.1.6(@babel/core@7.29.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+<<<<<<< HEAD
+=======
+      nodemailer:
+        specifier: ^8.0.3
+        version: 8.0.3
+>>>>>>> 468b9fe (build fixed)
       react:
         specifier: 19.2.3
         version: 19.2.3
@@ -481,6 +497,7 @@ packages:
   '@standard-schema/utils@0.3.0':
     resolution: {integrity: sha512-e7Mew686owMaPJVNNLs55PUvgz371nKgwsc4vxE49zsODpJEnxgxRo2y/OKrqueavXgZNMDVj3DdHFlaSAeU8g==}
 
+<<<<<<< HEAD
   '@supabase/auth-js@2.99.3':
     resolution: {integrity: sha512-vMEVLA1kGGYd/kdsJSwtjiFUZM1nGfrz2DWmgMBZtocV48qL+L2+4QpIkueXyBEumMQZFEyhz57i/5zGHjvdBw==}
     engines: {node: '>=20.0.0'}
@@ -495,6 +512,25 @@ packages:
 
   '@supabase/realtime-js@2.99.3':
     resolution: {integrity: sha512-c1azgZ2nZPczbY5k5u5iFrk1InpxN81IvNE+UBAkjrBz3yc5ALLJNkeTQwbJZT4PZBuYXEzqYGLMuh9fdTtTMg==}
+=======
+  '@supabase/auth-js@2.100.0':
+    resolution: {integrity: sha512-pdT3ye3UVRN1Cg0wom6BmyY+XTtp5DiJaYnPi6j8ht5i8Lq8kfqxJMJz9GI9YDKk3w1nhGOPnh6Qz5qpyYm+1w==}
+    engines: {node: '>=20.0.0'}
+
+  '@supabase/functions-js@2.100.0':
+    resolution: {integrity: sha512-keLg79RPwP+uiwHuxFPTFgDRxPV46LM4j/swjyR2GKJgWniTVSsgiBHfbIBDcrQwehLepy09b/9QSHUywtKRWQ==}
+    engines: {node: '>=20.0.0'}
+
+  '@supabase/phoenix@0.4.0':
+    resolution: {integrity: sha512-RHSx8bHS02xwfHdAbX5Lpbo6PXbgyf7lTaXTlwtFDPwOIw64NnVRwFAXGojHhjtVYI+PEPNSWwkL90f4agN3bw==}
+
+  '@supabase/postgrest-js@2.100.0':
+    resolution: {integrity: sha512-xYNvNbBJaXOGcrZ44wxwp5830uo1okMHGS8h8dm3u4f0xcZ39yzbryUsubTJW41MG2gbL/6U57cA4Pi6YMZ9pA==}
+    engines: {node: '>=20.0.0'}
+
+  '@supabase/realtime-js@2.100.0':
+    resolution: {integrity: sha512-2AZs00zzEF0HuCKY8grz5eCYlwEfVi5HONLZFoNR6aDfxQivl8zdQYNjyFoqN2MZiVhQHD7u6XV/xHwM8mCEHw==}
+>>>>>>> 468b9fe (build fixed)
     engines: {node: '>=20.0.0'}
 
   '@supabase/ssr@0.9.0':
@@ -502,12 +538,21 @@ packages:
     peerDependencies:
       '@supabase/supabase-js': ^2.97.0
 
+<<<<<<< HEAD
   '@supabase/storage-js@2.99.3':
     resolution: {integrity: sha512-lOfIm4hInNcd8x0i1LWphnLKxec42wwbjs+vhaVAvR801Vda0UAMbTooUY6gfqgQb8v29GofqKuQMMTAsl6w/w==}
     engines: {node: '>=20.0.0'}
 
   '@supabase/supabase-js@2.99.3':
     resolution: {integrity: sha512-GuPbzoEaI51AkLw9VGhLNvnzw4PHbS3p8j2/JlvLeZNQMKwZw4aEYQIDBRtFwL5Nv7/275n9m4DHtakY8nCvgg==}
+=======
+  '@supabase/storage-js@2.100.0':
+    resolution: {integrity: sha512-d4EeuK6RNIgYNA2MU9kj8lQrLm5AzZ+WwpWjGkii6SADQNIGTC/uiaTRu02XJ5AmFALQfo8fLl9xuCkO6Xw+iQ==}
+    engines: {node: '>=20.0.0'}
+
+  '@supabase/supabase-js@2.100.0':
+    resolution: {integrity: sha512-r0tlcukejJXJ1m/2eG/Ya5eYs4W8AC7oZfShpG3+SIo/eIU9uIt76ZeYI1SoUwUmcmzlAbgch+HDZDR/toVQPQ==}
+>>>>>>> 468b9fe (build fixed)
     engines: {node: '>=20.0.0'}
 
   '@swc/helpers@0.5.15':
@@ -650,8 +695,13 @@ packages:
   '@types/node@20.19.37':
     resolution: {integrity: sha512-8kzdPJ3FsNsVIurqBs7oodNnCEVbni9yUEkaHbgptDACOPW04jimGagZ51E6+lXUwJjgnBw+hyko/lkFWCldqw==}
 
+<<<<<<< HEAD
   '@types/phoenix@1.6.7':
     resolution: {integrity: sha512-oN9ive//QSBkf19rfDv45M7eZPi0eEXylht2OLEXicu5b4KoQ1OzXIw+xDSGWxSxe1JmepRR/ZH283vsu518/Q==}
+=======
+  '@types/nodemailer@7.0.11':
+    resolution: {integrity: sha512-E+U4RzR2dKrx+u3N4DlsmLaDC6mMZOM/TPROxA0UAPiTgI0y4CEFBmZE+coGWTjakDriRsXG368lNk1u9Q0a2g==}
+>>>>>>> 468b9fe (build fixed)
 
   '@types/react-dom@19.2.3':
     resolution: {integrity: sha512-jp2L/eY6fn+KgVVQAOqYItbF0VY/YApe5Mz2F0aykSO8gx31bYCZyvSeYxCHKvzHG5eZjc+zyaS5BrBWya2+kQ==}
@@ -829,6 +879,7 @@ packages:
     cpu: [x64]
     os: [win32]
 
+<<<<<<< HEAD
   '@vercel/speed-insights@2.0.0':
     resolution: {integrity: sha512-jwkNcrTeafWxjmWq4AHBaptSqZiJkYU5adLC9QBSqeim0GcqDMgN5Ievh8OG1rJ6W3A4l1oiP7qr9CWxGuzu3w==}
     peerDependencies:
@@ -855,6 +906,8 @@ packages:
       vue-router:
         optional: true
 
+=======
+>>>>>>> 468b9fe (build fixed)
   acorn-jsx@5.3.2:
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
     peerDependencies:
@@ -2010,6 +2063,13 @@ packages:
   node-releases@2.0.36:
     resolution: {integrity: sha512-TdC8FSgHz8Mwtw9g5L4gR/Sh9XhSP/0DEkQxfEFXOpiul5IiHgHan2VhYYb6agDSfp4KuvltmGApc8HMgUrIkA==}
 
+<<<<<<< HEAD
+=======
+  nodemailer@8.0.3:
+    resolution: {integrity: sha512-JQNBqvK+bj3NMhUFR3wmCl3SYcOeMotDiwDBvIoCuQdF0PvlIY0BH+FJ2CG7u4cXKPChplE78oowlH/Otsc4ZQ==}
+    engines: {node: '>=6.0.0'}
+
+>>>>>>> 468b9fe (build fixed)
   normalize-path@3.0.0:
     resolution: {integrity: sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==}
     engines: {node: '>=0.10.0'}
@@ -2370,8 +2430,13 @@ packages:
   tailwindcss@4.2.2:
     resolution: {integrity: sha512-KWBIxs1Xb6NoLdMVqhbhgwZf2PGBpPEiwOqgI4pFIYbNTfBXiKYyWoTsXgBQ9WFg/OlhnvHaY+AEpW7wSmFo2Q==}
 
+<<<<<<< HEAD
   tapable@2.3.0:
     resolution: {integrity: sha512-g9ljZiwki/LfxmQADO3dEY1CbpmXT5Hm2fJ+QaGKwSXUylMybePR7/67YW7jOrrvjEgL1Fmz5kzyAjWVWLlucg==}
+=======
+  tapable@2.3.1:
+    resolution: {integrity: sha512-b+u3CEM6FjDHru+nhUSjDofpWSBp2rINziJWgApm72wwGasQ/wKXftZe4tI2Y5HPv6OpzXSZHOFq87H4vfsgsw==}
+>>>>>>> 468b9fe (build fixed)
     engines: {node: '>=6'}
 
   tar-stream@2.2.0:
@@ -2934,6 +2999,7 @@ snapshots:
 
   '@standard-schema/utils@0.3.0': {}
 
+<<<<<<< HEAD
   '@supabase/auth-js@2.99.3':
     dependencies:
       tslib: 2.8.1
@@ -2949,6 +3015,25 @@ snapshots:
   '@supabase/realtime-js@2.99.3':
     dependencies:
       '@types/phoenix': 1.6.7
+=======
+  '@supabase/auth-js@2.100.0':
+    dependencies:
+      tslib: 2.8.1
+
+  '@supabase/functions-js@2.100.0':
+    dependencies:
+      tslib: 2.8.1
+
+  '@supabase/phoenix@0.4.0': {}
+
+  '@supabase/postgrest-js@2.100.0':
+    dependencies:
+      tslib: 2.8.1
+
+  '@supabase/realtime-js@2.100.0':
+    dependencies:
+      '@supabase/phoenix': 0.4.0
+>>>>>>> 468b9fe (build fixed)
       '@types/ws': 8.18.1
       tslib: 2.8.1
       ws: 8.20.0
@@ -2956,16 +3041,26 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
+<<<<<<< HEAD
   '@supabase/ssr@0.9.0(@supabase/supabase-js@2.99.3)':
     dependencies:
       '@supabase/supabase-js': 2.99.3
       cookie: 1.1.1
 
   '@supabase/storage-js@2.99.3':
+=======
+  '@supabase/ssr@0.9.0(@supabase/supabase-js@2.100.0)':
+    dependencies:
+      '@supabase/supabase-js': 2.100.0
+      cookie: 1.1.1
+
+  '@supabase/storage-js@2.100.0':
+>>>>>>> 468b9fe (build fixed)
     dependencies:
       iceberg-js: 0.8.1
       tslib: 2.8.1
 
+<<<<<<< HEAD
   '@supabase/supabase-js@2.99.3':
     dependencies:
       '@supabase/auth-js': 2.99.3
@@ -2973,6 +3068,15 @@ snapshots:
       '@supabase/postgrest-js': 2.99.3
       '@supabase/realtime-js': 2.99.3
       '@supabase/storage-js': 2.99.3
+=======
+  '@supabase/supabase-js@2.100.0':
+    dependencies:
+      '@supabase/auth-js': 2.100.0
+      '@supabase/functions-js': 2.100.0
+      '@supabase/postgrest-js': 2.100.0
+      '@supabase/realtime-js': 2.100.0
+      '@supabase/storage-js': 2.100.0
+>>>>>>> 468b9fe (build fixed)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -3091,7 +3195,13 @@ snapshots:
     dependencies:
       undici-types: 6.21.0
 
+<<<<<<< HEAD
   '@types/phoenix@1.6.7': {}
+=======
+  '@types/nodemailer@7.0.11':
+    dependencies:
+      '@types/node': 20.19.37
+>>>>>>> 468b9fe (build fixed)
 
   '@types/react-dom@19.2.3(@types/react@19.2.14)':
     dependencies:
@@ -3257,11 +3367,14 @@ snapshots:
   '@unrs/resolver-binding-win32-x64-msvc@1.11.1':
     optional: true
 
+<<<<<<< HEAD
   '@vercel/speed-insights@2.0.0(next@16.1.6(@babel/core@7.29.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react@19.2.3)':
     optionalDependencies:
       next: 16.1.6(@babel/core@7.29.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       react: 19.2.3
 
+=======
+>>>>>>> 468b9fe (build fixed)
   acorn-jsx@5.3.2(acorn@8.16.0):
     dependencies:
       acorn: 8.16.0
@@ -3655,7 +3768,11 @@ snapshots:
   enhanced-resolve@5.20.1:
     dependencies:
       graceful-fs: 4.2.11
+<<<<<<< HEAD
       tapable: 2.3.0
+=======
+      tapable: 2.3.1
+>>>>>>> 468b9fe (build fixed)
 
   es-abstract@1.24.1:
     dependencies:
@@ -4556,6 +4673,11 @@ snapshots:
 
   node-releases@2.0.36: {}
 
+<<<<<<< HEAD
+=======
+  nodemailer@8.0.3: {}
+
+>>>>>>> 468b9fe (build fixed)
   normalize-path@3.0.0: {}
 
   object-assign@4.1.1: {}
@@ -5003,7 +5125,11 @@ snapshots:
 
   tailwindcss@4.2.2: {}
 
+<<<<<<< HEAD
   tapable@2.3.0: {}
+=======
+  tapable@2.3.1: {}
+>>>>>>> 468b9fe (build fixed)
 
   tar-stream@2.2.0:
     dependencies:

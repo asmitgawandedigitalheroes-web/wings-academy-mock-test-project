@@ -87,14 +87,21 @@ export default async function ModuleDetailPage({ params }: PageProps) {
                         <Clock className="w-4 h-4 text-slate-300" />
                         <span className="text-xs font-bold text-slate-500">{test.duration}</span>
                     </div>
-                    {test.attemptsAllowed > 0 && (
+                    {test.isModulePurchased ? (
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-green-400" />
+                        <span className="text-xs font-bold text-green-600">
+                          Unlimited Attempts
+                        </span>
+                      </div>
+                    ) : test.attemptsAllowed > 0 ? (
                       <div className="flex items-center gap-2">
                         <FileText className="w-4 h-4 text-slate-300" />
                         <span className="text-xs font-bold text-slate-500">
                           {test.completedAttempts}/{test.attemptsAllowed} Attempts
                         </span>
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               </div>

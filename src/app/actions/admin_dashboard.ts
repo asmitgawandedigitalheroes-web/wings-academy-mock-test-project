@@ -1,9 +1,18 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+
+function getAdminClient() {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 export async function getAdminDashboardStats() {
   const supabase = await createClient()
+  const adminClient = getAdminClient()
 
   // Execute all count and sum queries in parallel
   const [
@@ -18,7 +27,7 @@ export async function getAdminDashboardStats() {
     supabase.from('modules').select('*', { count: 'exact', head: true }),
     supabase.from('questions').select('*', { count: 'exact', head: true }),
     supabase.from('test_sets').select('*', { count: 'exact', head: true }).eq('is_hidden', false),
-    supabase.from('payments').select('amount').eq('status', 'completed'),
+    adminClient.from('payments').select('amount').eq('status', 'completed'),
     supabase.from('test_results').select('score')
   ])
 
@@ -154,8 +163,6 @@ export async function getAllAdminActivity() {
     { data: recentTests },
     { data: newTests },
     { data: newModules },
-    { data: payments },
-    { data: violations },
     { data: enquiries },
     { data: newQuestions },
     { data: newCategories }
@@ -164,11 +171,18 @@ export async function getAllAdminActivity() {
     supabase.from('test_results').select('id, score, completed_at, test_sets(title), profiles(full_name)').order('completed_at', { ascending: false }).limit(50),
     supabase.from('test_sets').select('id, title, created_at').order('created_at', { ascending: false }).limit(50),
     supabase.from('modules').select('id, name, created_at').order('created_at', { ascending: false }).limit(50),
-    supabase.from('payments').select('id, amount, created_at, profiles(full_name), test_sets(title)').order('created_at', { ascending: false }).limit(50),
-    supabase.from('test_violations').select('id, violation_type, created_at, profiles(full_name), test_sets(title)').order('created_at', { ascending: false }).limit(50),
     supabase.from('enquiries').select('id, first_name, last_name, created_at').order('created_at', { ascending: false }).limit(50),
     supabase.from('questions').select('id, question_text, created_at, modules(name)').order('created_at', { ascending: false }).limit(50),
     supabase.from('categories').select('id, name, created_at').order('created_at', { ascending: false }).limit(50)
+  ])
+
+  const adminClient = getAdminClient()
+  const [
+    { data: payments },
+    { data: violations }
+  ] = await Promise.all([
+    adminClient.from('payments').select('id, amount, created_at, profiles(full_name), test_sets(title)').order('created_at', { ascending: false }).limit(50),
+    adminClient.from('test_violations').select('id, violation_type, created_at, profiles(full_name), test_sets(title)').order('created_at', { ascending: false }).limit(50)
   ])
 
   const activities: any[] = []
@@ -299,7 +313,7 @@ export async function getAdminAnalytics(days: number = 14) {
   ] = await Promise.all([
     supabase.from('profiles').select('created_at').gte('created_at', startDate.toISOString()),
     supabase.from('test_results').select('completed_at').gte('completed_at', startDate.toISOString()),
-    supabase.from('payments').select('amount, created_at').eq('status', 'completed').gte('created_at', startDate.toISOString()),
+    getAdminClient().from('payments').select('amount, created_at').eq('status', 'completed').gte('created_at', startDate.toISOString()),
     supabase.from('test_results').select('test_sets(modules(name))')
   ])
 

@@ -261,10 +261,11 @@ export async function getModuleTests(moduleId: string) {
         }
       }
 
-    const isLimitReached = test.attempts_allowed > 0 && completedAttempts >= test.attempts_allowed
-
     const isModulePurchased = purchases?.some(p => p.module_id === moduleId)
     const purchasedTestIds = new Set(purchases?.filter(p => p.test_set_id).map(p => p.test_set_id) || [])
+
+    // If module is purchased, unlimited attempts — never limit reached
+    const isLimitReached = !isModulePurchased && test.attempts_allowed > 0 && completedAttempts >= test.attempts_allowed
 
     return {
       id: test.id,
@@ -276,9 +277,10 @@ export async function getModuleTests(moduleId: string) {
       price: test.price,
       isUnlocked: !test.is_paid || isModulePurchased || purchasedTestIds.has(test.id),
       lockoutMinutes: lockoutMinutes,
-      isLimitReached: isLimitReached && lockoutMinutes <= 0, // Only show as reached if not already timed out
+      isLimitReached: isLimitReached && lockoutMinutes <= 0,
       completedAttempts,
-      attemptsAllowed: test.attempts_allowed
+      attemptsAllowed: isModulePurchased ? 0 : test.attempts_allowed, // 0 = unlimited for purchased
+      isModulePurchased: !!isModulePurchased
     }
   })
 
@@ -583,6 +585,7 @@ export async function getResultDetails(resultId: string) {
         show_answers,
         show_explanation,
         attempts_allowed,
+        module_id,
         modules(name)
       )
     `)
@@ -614,12 +617,23 @@ export async function getResultDetails(resultId: string) {
     }
   }
 
-  // 3. Check attempt count vs allowed attempts
+  // 3. Check if module is purchased (unlimited attempts)
+  const serviceClient = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+  const { data: modulePurchase } = await serviceClient
+    .from('payments').select('id')
+    .eq('user_id', user.id).eq('module_id', test.module_id).eq('status', 'completed')
+    .maybeSingle()
+  const isModulePurchased = !!modulePurchase
+
+  // 4. Check attempt count vs allowed attempts
   const attemptsAllowed = test?.attempts_allowed || 0
   let attemptsUsed = 0
   let hasReachedLimit = false
 
-  if (attemptsAllowed > 0) {
+  if (!isModulePurchased && attemptsAllowed > 0) {
     const { count: completedCount } = await supabase
       .from('test_attempts')
       .select('*', { count: 'exact', head: true })
@@ -957,20 +971,29 @@ export async function startTestSession(testId: string, requestedSessionId?: stri
   // 1. Get test details (limits and cooldown)
   const { data: test } = await supabase
     .from('test_sets')
-    .select('id, time_limit_minutes, attempts_allowed, cooldown_hours')
+    .select('id, time_limit_minutes, attempts_allowed, cooldown_hours, module_id')
     .eq('id', testId)
     .single()
 
   if (!test) return { error: 'Test not found' }
 
-  // 2. Fetch user attempts for this test
+  // 2. Check if user has purchased the module (unlimited attempts)
+  const serviceClient = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+  const { data: modulePurchase } = await serviceClient
+    .from('payments').select('id')
+    .eq('user_id', user.id).eq('module_id', test.module_id).eq('status', 'completed')
+    .maybeSingle()
+  const isModulePurchased = !!modulePurchase
+
+  // 3. Fetch user attempts for this test
   const { data: testAttempts } = await supabase
     .from('test_attempts')
     .select('status, updated_at, attempt_number')
     .eq('user_id', user.id)
     .eq('test_set_id', testId)
-
-
 
   // 4. Custom Cooldown Check
   if (test.cooldown_hours > 0) {
@@ -987,8 +1010,8 @@ export async function startTestSession(testId: string, requestedSessionId?: stri
     }
   }
 
-  // 5. Attempt Limit Check
-  if (test.attempts_allowed > 0) {
+  // 5. Attempt Limit Check (skip if module is purchased — unlimited attempts)
+  if (!isModulePurchased && test.attempts_allowed > 0) {
     const completedAttempts = testAttempts?.filter(a => a.status === 'completed').length || 0
     if (completedAttempts >= test.attempts_allowed) {
         return { error: `You have reached the maximum allowed attempts (${test.attempts_allowed}) for this test.` }
@@ -1734,7 +1757,7 @@ export async function getUserPurchases() {
 
   if (!user) return []
 
-  const { data, error } = await supabase
+  const { data, error } = await getAdminClient()
     .from('payments')
     .select(`
       id,

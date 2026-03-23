@@ -21,7 +21,7 @@ import {
 import Link from 'next/link'
 import BackButton from '@/components/common/BackButton'
 import { createClient } from '@/utils/supabase/client'
-import { updateUserStatus, forceLogoutUser, grantModuleAccess, getStudentGrantedModuleIds } from '@/app/actions/admin'
+import { updateUserStatus, forceLogoutUser, grantModuleAccess, revokeModuleAccess, getStudentGrantedModuleIds } from '@/app/actions/admin'
 import ConfirmationModal from '@/components/common/ConfirmationModal'
 
 export default function StudentProfilePage() {
@@ -36,8 +36,10 @@ export default function StudentProfilePage() {
   const [actionLoading, setActionLoading] = useState(false)
   const [paidModules, setPaidModules] = useState<any[]>([])
   const [grantingModuleId, setGrantingModuleId] = useState<string | null>(null)
+  const [revokingModuleId, setRevokingModuleId] = useState<string | null>(null)
   const [grantedModuleIds, setGrantedModuleIds] = useState<Set<string>>(new Set())
   const [grantError, setGrantError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'performance' | 'access'>('performance')
   const [modalConfig, setModalConfig] = useState<{
     isOpen: boolean,
     title: string,
@@ -142,6 +144,34 @@ export default function StudentProfilePage() {
       setGrantedModuleIds(prev => new Set([...prev, moduleId]))
     }
     setGrantingModuleId(null)
+  }
+
+  const handleRevokeAccess = async (moduleId: string, moduleName: string) => {
+    setModalConfig({
+      isOpen: true,
+      title: 'Revoke Module Access',
+      message: `Are you sure you want to revoke access to "${moduleName}" for this student? Correct payment records will be removed and the student will lose access immediately.`,
+      type: 'danger',
+      confirmLabel: 'Revoke Access',
+      onConfirm: async () => {
+        setRevokingModuleId(moduleId)
+        setActionLoading(true)
+        setGrantError(null)
+        const res = await revokeModuleAccess(id, moduleId)
+        if (res.error) {
+          setGrantError(res.error)
+        } else {
+          setGrantedModuleIds(prev => {
+            const next = new Set(prev)
+            next.delete(moduleId)
+            return next
+          })
+        }
+        setRevokingModuleId(null)
+        setActionLoading(false)
+        setModalConfig(prev => ({ ...prev, isOpen: false }))
+      }
+    })
   }
 
   const handleStatusToggle = () => {
@@ -328,124 +358,170 @@ export default function StudentProfilePage() {
               <h4 className="text-3xl font-black text-[#0f172a]">{stats?.passPercentage || 0}%</h4>
             </div>
           </div>
+          
+          {/* Tabs Navigation */}
+          <div className="flex items-center gap-1 border-b border-slate-100 mb-6 bg-slate-50/50 p-1.5 rounded-2xl w-fit">
+            <button
+              onClick={() => setActiveTab('performance')}
+              className={`px-6 py-2.5 rounded-xl text-sm font-black transition-all flex items-center gap-2 ${
+                activeTab === 'performance' 
+                  ? 'bg-white text-primary shadow-sm ring-1 ring-slate-100' 
+                  : 'text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              <History className="w-4 h-4" />
+              Performance
+            </button>
+            <button
+              onClick={() => setActiveTab('access')}
+              className={`px-6 py-2.5 rounded-xl text-sm font-black transition-all flex items-center gap-2 ${
+                activeTab === 'access' 
+                  ? 'bg-white text-primary shadow-sm ring-1 ring-slate-100' 
+                  : 'text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              <LockOpen className="w-4 h-4" />
+              Access Management
+            </button>
+          </div>
 
-          {/* Test History */}
-          <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-primary/5 overflow-hidden">
-            <div className="p-8 border-b border-slate-50 flex items-center justify-between">
-              <h3 className="text-xl font-black text-[#0f172a] flex items-center gap-3">
-                <History className="w-6 h-6 text-primary" />
-                Performance History
-              </h3>
+          {activeTab === 'performance' ? (
+            /* Test History */
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-primary/5 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="p-8 border-b border-slate-50 flex items-center justify-between">
+                <h3 className="text-xl font-black text-[#0f172a] flex items-center gap-3">
+                  <History className="w-6 h-6 text-primary" />
+                  Performance History
+                </h3>
+              </div>
+              <div className="overflow-x-auto">
+                {recentTests.length === 0 ? (
+                  <div className="p-20 text-center text-slate-400 font-bold">
+                    No test attempts found for this student.
+                  </div>
+                ) : (
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="bg-slate-50/50">
+                        <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Test Title</th>
+                        <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Score</th>
+                        <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Result</th>
+                        <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {recentTests.map((t) => {
+                        const isPass = t.score >= (t.test_sets?.pass_percentage || 70)
+                        return (
+                          <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-8 py-4">
+                              <p className="text-sm font-black text-[#0f172a]">{t.test_sets?.title}</p>
+                              <p className="text-[10px] text-primary font-bold uppercase">{t.test_sets?.modules?.name}</p>
+                            </td>
+                            <td className="px-8 py-4">
+                              <span className={`font-black text-sm ${isPass ? 'text-green-600' : 'text-red-600'}`}>
+                                {t.score}%
+                              </span>
+                            </td>
+                            <td className="px-8 py-4">
+                              <span className={`inline-flex items-center gap-1 text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                                isPass ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                              }`}>
+                                {isPass ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                                {isPass ? 'Pass' : 'Fail'}
+                              </span>
+                            </td>
+                            <td className="px-8 py-4">
+                              <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400">
+                                <Clock className="w-3 h-3" />
+                                {new Date(t.created_at).toLocaleDateString()}
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
             </div>
-            <div className="overflow-x-auto">
-              {recentTests.length === 0 ? (
-                <div className="p-20 text-center text-slate-400 font-bold">
-                  No test attempts found for this student.
+          ) : (
+            /* Grant Module Access Section */
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-primary/5 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="p-8 border-b border-slate-50 flex items-center gap-3">
+                <LockOpen className="w-6 h-6 text-primary" />
+                <div>
+                  <h3 className="text-xl font-black text-[#0f172a]">Grant Module Access</h3>
+                  <p className="text-xs text-slate-400 font-medium mt-0.5">Unlock all paid tests in a module for this student — useful for testing or after verifying Ziina payment.</p>
                 </div>
-              ) : (
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="bg-slate-50/50">
-                      <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Test Title</th>
-                      <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Score</th>
-                      <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Result</th>
-                      <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {recentTests.map((t) => {
-                      const isPass = t.score >= (t.test_sets?.pass_percentage || 70)
-                      return (
-                        <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="px-8 py-4">
-                            <p className="text-sm font-black text-[#0f172a]">{t.test_sets?.title}</p>
-                            <p className="text-[10px] text-primary font-bold uppercase">{t.test_sets?.modules?.name}</p>
-                          </td>
-                          <td className="px-8 py-4">
-                            <span className={`font-black text-sm ${isPass ? 'text-green-600' : 'text-red-600'}`}>
-                              {t.score}%
-                            </span>
-                          </td>
-                          <td className="px-8 py-4">
-                            <span className={`inline-flex items-center gap-1 text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                              isPass ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                            }`}>
-                              {isPass ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
-                              {isPass ? 'Pass' : 'Fail'}
-                            </span>
-                          </td>
-                          <td className="px-8 py-4">
-                            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400">
-                              <Clock className="w-3 h-3" />
-                              {new Date(t.created_at).toLocaleDateString()}
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+              </div>
+              {grantError && (
+                <div className="mx-8 mt-4 p-3 bg-red-50 text-red-600 text-sm font-bold rounded-2xl border border-red-100 flex items-center justify-between gap-2">
+                  <span>{grantError}</span>
+                  <button onClick={() => setGrantError(null)} className="text-red-400 hover:text-red-600 font-black text-lg leading-none">×</button>
+                </div>
               )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Grant Module Access Section */}
-      {paidModules.length > 0 && (
-        <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-primary/5 overflow-hidden">
-          <div className="p-8 border-b border-slate-50 flex items-center gap-3">
-            <LockOpen className="w-6 h-6 text-primary" />
-            <div>
-              <h3 className="text-xl font-black text-[#0f172a]">Grant Module Access</h3>
-              <p className="text-xs text-slate-400 font-medium mt-0.5">Unlock all paid tests in a module for this student — useful for testing or after verifying Ziina payment.</p>
-            </div>
-          </div>
-          {grantError && (
-            <div className="mx-8 mt-4 p-3 bg-red-50 text-red-600 text-sm font-bold rounded-2xl border border-red-100 flex items-center justify-between gap-2">
-              <span>{grantError}</span>
-              <button onClick={() => setGrantError(null)} className="text-red-400 hover:text-red-600 font-black text-lg leading-none">×</button>
+              <div className="divide-y divide-slate-50">
+                {paidModules.length > 0 ? (
+                  paidModules.map((mod: any) => {
+                    const hasAccess = grantedModuleIds.has(mod.id)
+                    const isGranting = grantingModuleId === mod.id
+                    return (
+                      <div key={mod.id} className="px-8 py-5 flex items-center justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-black text-[#0f172a] truncate">{mod.name}</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Unlocks all paid tests in this module</p>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                          {mod.price > 0 && (
+                            <span className="text-xs font-black text-slate-400">AED {mod.price}</span>
+                          )}
+                          {hasAccess ? (
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[0.65rem] font-black uppercase tracking-widest bg-green-100 text-green-700">
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                Access Granted
+                              </span>
+                              <button
+                                onClick={() => handleRevokeAccess(mod.id, mod.name)}
+                                disabled={revokingModuleId === mod.id}
+                                className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                title="Revoke Access"
+                              >
+                                {revokingModuleId === mod.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <XCircle className="w-4 h-4" />
+                                )}
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleGrantAccess(mod.id)}
+                              disabled={isGranting}
+                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[0.65rem] font-black uppercase tracking-widest bg-primary text-white hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {isGranting ? (
+                                <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Granting...</>
+                              ) : (
+                                <><LockOpen className="w-3.5 h-3.5" /> Grant Access</>
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })
+                ) : (
+                  <div className="p-12 text-center text-slate-400 font-bold">
+                    No paid modules available.
+                  </div>
+                )}
+              </div>
             </div>
           )}
-          <div className="divide-y divide-slate-50">
-            {paidModules.map((mod: any) => {
-              const hasAccess = grantedModuleIds.has(mod.id)
-              const isGranting = grantingModuleId === mod.id
-              return (
-                <div key={mod.id} className="px-8 py-5 flex items-center justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-black text-[#0f172a] truncate">{mod.name}</p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Unlocks all paid tests in this module</p>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    {mod.price > 0 && (
-                      <span className="text-xs font-black text-slate-400">AED {mod.price}</span>
-                    )}
-                    {hasAccess ? (
-                      <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[0.65rem] font-black uppercase tracking-widest bg-green-100 text-green-700">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        Access Granted
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => handleGrantAccess(mod.id)}
-                        disabled={isGranting}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[0.65rem] font-black uppercase tracking-widest bg-primary text-white hover:bg-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {isGranting ? (
-                          <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Granting...</>
-                        ) : (
-                          <><LockOpen className="w-3.5 h-3.5" /> Grant Access</>
-                        )}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
         </div>
-      )}
+      </div>
 
       <ConfirmationModal
         isOpen={modalConfig.isOpen}

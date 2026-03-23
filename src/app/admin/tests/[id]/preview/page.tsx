@@ -140,7 +140,7 @@ export default function TestPreviewPage() {
         {/* Navigation Sidebar (Desktop) */}
         <div className="lg:col-span-3 bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-xl shadow-primary/5 sticky top-24 hidden lg:block">
           <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6 px-2">Question Palette</h3>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-4 sm:grid-cols-5 xl:grid-cols-6 gap-2 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
             {questions.map((_: any, idx: number) => (
               <button
                 key={idx}
