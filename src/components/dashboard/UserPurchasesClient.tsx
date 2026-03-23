@@ -96,7 +96,7 @@ export default function UserPurchasesClient({ initialPurchases }: UserPurchasesC
                 <div className="flex items-center justify-between md:justify-end gap-8 border-t md:border-t-0 pt-4 md:pt-0">
                   <div className="text-right">
                     <p className="text-[0.6rem] font-black text-slate-400 uppercase tracking-widest mb-0.5">Amount Paid</p>
-                    <p className="text-lg md:text-xl font-black text-[#0f172a]">₹{purchase.amount}</p>
+                    <p className="text-lg md:text-xl font-black text-[#0f172a]">AED {purchase.amount}</p>
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     <div className={`px-4 py-2 rounded-xl font-black text-[0.65rem] uppercase tracking-widest border flex items-center gap-2 ${
@@ -108,7 +108,7 @@ export default function UserPurchasesClient({ initialPurchases }: UserPurchasesC
                       {purchase.status}
                     </div>
                     {purchase.status === 'pending' && (
-                      <span className="text-[0.6rem] font-bold text-amber-500 max-w-[120px] text-right">Awaiting manual verification by admin</span>
+                      <span className="text-[0.6rem] font-bold text-amber-500 max-w-[120px] text-right">Payment processing</span>
                     )}
                     {purchase.status === 'completed' && (
                       <Link 

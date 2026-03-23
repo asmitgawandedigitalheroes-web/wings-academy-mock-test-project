@@ -1776,8 +1776,8 @@ export async function createZiinaCheckout(moduleId: string) {
 
   if (!moduleInfo) return { error: 'Module not found' }
 
-  // Check if already purchased
-  const { data: existing } = await serviceClient
+  // Check if already purchased (completed)
+  const { data: completed } = await serviceClient
     .from('payments')
     .select('id')
     .eq('user_id', user.id)
@@ -1785,12 +1785,38 @@ export async function createZiinaCheckout(moduleId: string) {
     .eq('status', 'completed')
     .maybeSingle()
 
-  if (existing) return { error: 'already_purchased' }
+  if (completed) return { error: 'already_purchased' }
+
+  // Check for existing pending payment — reuse its Ziina intent instead of creating duplicates
+  const { data: pendingPayment } = await serviceClient
+    .from('payments')
+    .select('id, transaction_id')
+    .eq('user_id', user.id)
+    .eq('module_id', moduleId)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
 
   const price = moduleInfo.price || 49
 
   try {
-    const { createPaymentIntent } = await import('@/utils/ziina')
+    const { createPaymentIntent, getPaymentIntent } = await import('@/utils/ziina')
+
+    // If a pending payment exists, try to reuse its Ziina intent
+    if (pendingPayment?.transaction_id) {
+      try {
+        const existingIntent = await getPaymentIntent(pendingPayment.transaction_id)
+        if (existingIntent.redirect_url && existingIntent.status !== 'failed' && existingIntent.status !== 'canceled') {
+          return { redirect_url: existingIntent.redirect_url }
+        }
+      } catch {
+        // Intent expired or invalid — create a new one below
+      }
+      // Delete the stale pending payment
+      await serviceClient.from('payments').delete().eq('id', pendingPayment.id)
+    }
+
     const intent = await createPaymentIntent({
       amount: price,
       moduleId,
