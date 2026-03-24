@@ -48,7 +48,15 @@ export default function ModulesClient({ initialModules }: ModulesClientProps) {
         // Prioritize unlocked modules at the top
         if (a.isUnlocked && !b.isUnlocked) return -1
         if (!a.isUnlocked && b.isUnlocked) return 1
-        return 0
+        
+        // Secondary natural sort by name
+        const parseName = (n: string) => {
+          const match = n.match(/^(.*?)(\d+)\s*$/)
+          return match ? { prefix: match[1].toLowerCase(), num: parseInt(match[2]) } : { prefix: n.toLowerCase(), num: 0 }
+        }
+        const pa = parseName(a.name), pb = parseName(b.name)
+        if (pa.prefix !== pb.prefix) return pa.prefix.localeCompare(pb.prefix)
+        return pa.num - pb.num
       })
   }, [initialModules, search, filter])
 

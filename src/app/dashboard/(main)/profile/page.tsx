@@ -204,23 +204,6 @@ export default async function ProfilePage() {
                     )}
                 </div>
 
-                {/* Support Banner */}
-                <div className="bg-slate-900 rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-10 text-white relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-64 h-50 bg-primary/20 blur-[100px] -mr-32 -mt-32"></div>
-                    <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-10 text-center md:text-left">
-                        <div className="space-y-2">
-                            <h3 className="text-2xl md:text-3xl font-black tracking-tight">Need help with payments?</h3>
-                            <p className="text-slate-400 font-medium text-sm md:text-base">Our support team is available 24/7 to assist you with any queries.</p>
-                        </div>
-                        <Link 
-                            href="/contact"
-                            target="_blank"
-                            className="w-full md:w-auto px-10 py-4 bg-primary text-white rounded-xl md:rounded-2xl font-black text-[0.65rem] md:text-sm uppercase tracking-widest shadow-2xl shadow-primary/40 hover:scale-105 transition-all text-center block"
-                        >
-                            Contact Support
-                        </Link>
-                    </div>
-                </div>
             </div>
         </div>
     )
