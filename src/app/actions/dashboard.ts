@@ -157,7 +157,7 @@ export async function getModules() {
 
   const purchasedModuleIds = new Set(modulePurchases?.map(p => p.module_id) || [])
 
-  return modules.map(mod => ({
+  const mappedModules = modules.map(mod => ({
     id: mod.id,
     name: mod.name,
     description: mod.description,
@@ -169,6 +169,17 @@ export async function getModules() {
     paidTests: mod.test_sets?.filter((t: any) => t.is_paid).length || 0,
     isUnlocked: purchasedModuleIds.has(mod.id)
   }))
+
+  // Natural sort by name (e.g. Module 1, Module 2, ..., Module 10)
+  return mappedModules.sort((a, b) => {
+    const parseName = (n: string) => {
+      const match = n.match(/^(.*?)(\d+)\s*$/)
+      return match ? { prefix: match[1].toLowerCase(), num: parseInt(match[2]) } : { prefix: n.toLowerCase(), num: 0 }
+    }
+    const pa = parseName(a.name), pb = parseName(b.name)
+    if (pa.prefix !== pb.prefix) return pa.prefix.localeCompare(pb.prefix)
+    return pa.num - pb.num
+  })
 }
 
 export async function getPublicModules() {
@@ -746,10 +757,12 @@ export async function getResultsHistory() {
     .select(`
       id,
       score,
+      status,
       total_questions,
       completed_at,
       test_sets(
         title,
+        test_type,
         pass_percentage,
         modules(name)
       )
@@ -760,13 +773,19 @@ export async function getResultsHistory() {
   if (error) return []
 
   return data.map(r => {
-    const passPercentage = (r.test_sets as any)?.pass_percentage || 75
+    const testSet = (r.test_sets as any)
+    const passPercentage = testSet?.pass_percentage || 75
+    const isEssay = testSet?.test_type === 'essay'
+    const statusLabel = isEssay && (r.status === 'under_review' || !r.score) 
+      ? 'Under Review' 
+      : (Number(r.score) >= passPercentage ? 'Passed' : 'Failed')
+
     return {
       id: r.id,
-      title: (r.test_sets as any)?.title?.replace(/Short/g, 'Free'),
-      module: (r.test_sets as any)?.modules?.name || 'General',
-      score: `${Math.round(r.score)}%`,
-      status: Number(r.score) >= passPercentage ? 'Passed' : 'Failed',
+      title: testSet?.title?.replace(/Short/g, 'Free'),
+      module: testSet?.modules?.name || 'General',
+      score: isEssay && (r.status === 'under_review' || !r.score) ? '—' : `${Math.round(r.score)}%`,
+      status: statusLabel,
       date: new Date(r.completed_at).toLocaleDateString()
     }
   })
@@ -1563,7 +1582,7 @@ export async function getModuleResultsDetails(moduleId: string) {
   ] = await Promise.all([
     supabase.from('modules').select('id, name, description').eq('id', moduleId).single(),
     supabase.from('test_sets').select('id, title, time_limit_minutes, pass_percentage').eq('module_id', moduleId).eq('is_hidden', false).order('created_at', { ascending: true }),
-    supabase.from('test_results').select('id, score, completed_at, total_questions, correct_answers, time_spent_seconds, test_set_id, test_sets!inner(title, pass_percentage, module_id)').eq('user_id', user.id).eq('test_sets.module_id', moduleId).order('completed_at', { ascending: true }),
+    supabase.from('test_results').select('id, score, status, completed_at, total_questions, correct_answers, time_spent_seconds, test_set_id, test_sets!inner(title, test_type, pass_percentage, module_id)').eq('user_id', user.id).eq('test_sets.module_id', moduleId).order('completed_at', { ascending: true }),
     supabase.from('test_questions').select('question_id, test_set_id, questions(difficulty_level), test_sets!inner(module_id)').eq('test_sets.module_id', moduleId)
   ])
 
@@ -1604,13 +1623,20 @@ export async function getModuleResultsDetails(moduleId: string) {
   return {
     module,
     stats: { totalAttempts, avgScore, highestScore, passRate },
-    history: results.map(r => ({
-      id: r.id,
-      testTitle: (r.test_sets as any).title,
-      score: Math.round(Number(r.score)),
-      date: new Date(r.completed_at).toLocaleDateString(),
-      passed: Number(r.score) >= (r.test_sets as any).pass_percentage
-    })),
+    history: results.map(r => {
+      const isEssay = (r.test_sets as any).test_type === 'essay'
+      const passPercentage = (r.test_sets as any).pass_percentage
+      const isUnderReview = isEssay && (r.status === 'under_review' || !r.score)
+      
+      return {
+        id: r.id,
+        testTitle: (r.test_sets as any).title,
+        score: isUnderReview ? '—' : Math.round(Number(r.score)),
+        date: new Date(r.completed_at).toLocaleDateString(),
+        passed: isUnderReview ? false : Number(r.score) >= passPercentage,
+        status: isUnderReview ? 'Under Review' : (Number(r.score) >= passPercentage ? 'Passed' : 'Failed')
+      }
+    }),
     accuracy,
     difficultyBreakdown: Object.entries(difficultyStats).map(([name, val]) => ({ name, value: val.total })),
     tests: tests.map(t => ({
