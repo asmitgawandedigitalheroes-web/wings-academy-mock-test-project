@@ -32,6 +32,7 @@ const menuItems = [
   { name: 'Categories', href: '/admin/categories', icon: LayoutGrid },
   { name: 'Modules', href: '/admin/modules', icon: Layers },
   { name: 'Tests', href: '/admin/tests', icon: FileText },
+  { name: 'Blog', href: '/admin/blog', icon: FileText },
   { name: 'Results', href: '/admin/results', icon: ClipboardList },
   { name: 'Enquiries', href: '/admin/enquiries', icon: Mail },
   { name: 'Payments', href: '/admin/payments', icon: CreditCard },
